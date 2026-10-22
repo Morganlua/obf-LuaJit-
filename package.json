@@ -1,8 +1,12 @@
 {
-  "name": "capcut-full-bypass-suite",
-  "version": "1.0.0",
-  "private": true,
+  "name": "amprem-capcut-otp-generator",
+  "version": "1.1.0",
+  "description": "Auto Generator CapCut Pro with 6-Digit OTP Scraper",
+  "main": "index.js",
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^3.3.2"
   }
 }
