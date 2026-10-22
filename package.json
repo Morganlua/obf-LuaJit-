@@ -1,10 +1,8 @@
 {
-  "name": "luajit-obfuscator-safe",
+  "name": "capcut-pro-generator",
   "version": "1.0.0",
-  "description": "LuaJIT 5.1 Obfuscator Fullstack for MonetLoader",
-  "main": "api/obfuscate.js",
+  "private": true,
   "dependencies": {
-    "cors": "^2.8.5",
-    "fengari": "^0.1.4"
+    "node-fetch": "^2.6.7"
   }
 }

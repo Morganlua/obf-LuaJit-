@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/api/generate-cc", "destination": "/api/generate-cc.js" },
+    { "source": "/api/check-cc", "destination": "/api/check-cc.js" },
+    { "source": "/(.*)", "destination": "/public/index.html" }
+  ]
+}
