@@ -1,7 +1,10 @@
 {
   "rewrites": [
-    { "source": "/api/generate-cc", "destination": "/api/generate-cc.js" },
-    { "source": "/api/check-cc", "destination": "/api/check-cc.js" },
+    { "source": "/api/export", "destination": "/api/capcut-export.js" },
+    { "source": "/api/rights", "destination": "/api/capcut-rights.js" },
+    { "source": "/api/subscription", "destination": "/api/capcut-subscription.js" },
+    { "source": "/api/user-info", "destination": "/api/capcut-user-info.js" },
+    { "source": "/api/verify", "destination": "/api/capcut-verify.js" },
     { "source": "/(.*)", "destination": "/public/index.html" }
   ]
 }
