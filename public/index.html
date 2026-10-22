@@ -3,172 +3,155 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CapCut Pro Generator - Morgan</title>
+  <title>CapCut Full Bypass Suite - Morgan</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade { animation: fadeIn 0.3s ease-out forwards; }
+  </style>
 </head>
-<body class="bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 text-slate-100 min-h-screen pb-12 font-sans">
-  <header class="max-w-xl mx-auto px-4 pt-8 flex justify-between items-center">
-    <div class="flex items-center gap-3">
-      <div class="bg-gradient-to-tr from-blue-600 to-indigo-500 text-white p-2.5 rounded-2xl font-extrabold text-xl flex items-center justify-center w-12 h-12 shadow-lg">
-        <i class="fa-solid fa-video"></i>
+<body class="bg-[#0B0F19] text-slate-100 min-h-screen pb-12 font-sans">
+
+  <!-- Header -->
+  <header class="max-w-2xl mx-auto px-4 pt-6 flex justify-between items-center">
+    <div class="flex items-center gap-2.5">
+      <div class="bg-gradient-to-tr from-cyan-600 to-indigo-600 text-white p-2.5 rounded-xl font-extrabold text-xl flex items-center justify-center w-11 h-11 shadow-md shadow-cyan-500/20">
+        <i class="fa-solid fa-code"></i>
       </div>
       <div>
-        <span class="font-black text-xl tracking-tight text-white">CapCut</span>
-        <span class="bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 font-extrabold text-[10px] px-2 py-0.5 rounded-full ml-1">PRO</span>
+        <h1 class="font-bold text-base text-white tracking-tight leading-none">CapCut Full Suite</h1>
+        <span class="text-[10px] text-cyan-400 font-mono font-semibold">Modular JS Bypass Engine</span>
       </div>
     </div>
-    <div class="bg-white/10 text-indigo-200 text-xs px-4 py-2 rounded-2xl font-bold border border-white/10">✨ Credits Morgan</div>
+    <div class="bg-slate-800/80 text-slate-300 text-xs px-3 py-1.5 rounded-xl font-bold border border-slate-700 shadow-sm">
+      ✨ Morgan Dev
+    </div>
   </header>
 
-  <main class="max-w-xl mx-auto px-4 mt-8 space-y-6">
-    <div class="text-center space-y-2 mb-4">
-      <h1 class="text-3xl font-black text-white">CapCut Pro Generator</h1>
-      <p class="text-xs text-indigo-200/80 font-medium">Auto Generate & Verifikasi Manual Link Akun CapCut Pro</p>
-    </div>
+  <main class="max-w-2xl mx-auto px-4 mt-6 space-y-4">
+    
+    <!-- Input Panel -->
+    <div class="bg-slate-900/90 rounded-2xl p-5 border border-slate-800 shadow-xl space-y-4">
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-envelope text-cyan-400"></i> Target Email Akun CapCut
+        </label>
+        <input type="email" id="targetEmail" value="morgan.vip@capcut.mock" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-500">
+      </div>
 
-    <div class="bg-slate-900/90 p-1.5 rounded-2xl border border-indigo-500/20 shadow-xl flex gap-1.5">
-      <button onclick="switchTab('auto')" id="tabAuto" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs shadow-md transition">Auto Generate</button>
-      <button onclick="switchTab('manual')" id="tabManual" class="flex-1 py-3 px-4 rounded-xl text-slate-300 font-bold text-xs hover:bg-white/5 transition">Verifikasi Link / Manual</button>
-    </div>
+      <!-- Grid Tombol Eksekusi Modul JS -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+        <button onclick="runModule('subscription', '/api/subscription')" class="bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500 p-3 rounded-xl text-left transition space-y-1 group">
+          <div class="text-cyan-400 font-bold text-xs flex items-center justify-between">
+            <span>subscription.js</span>
+            <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-0.5 transition"></i>
+          </div>
+          <div class="text-[10px] text-slate-400 font-medium">Inject Status Langganan</div>
+        </button>
 
-    <div id="contentAuto" class="bg-slate-900/80 rounded-3xl p-6 border border-indigo-500/20 shadow-2xl space-y-6">
-      <button id="btnGenCC" onclick="generateCC()" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-black py-4 px-6 rounded-2xl shadow-lg text-xs">GENERATE AKUN BARU</button>
-      <div id="ccBox" class="hidden space-y-4 bg-slate-950/60 rounded-2xl p-4 border border-indigo-500/20">
-        <div>
-          <span class="text-[10px] font-bold text-indigo-400 block">EMAIL AKUN:</span>
-          <div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl mt-1">
-            <span id="ccEmail" class="font-bold text-indigo-300 font-mono text-xs break-all"></span>
-            <button onclick="copyText('ccEmail', 'Email disalin!')" class="text-xs bg-indigo-600/30 px-3 py-1 rounded-lg font-bold text-white">Salin</button>
+        <button onclick="runModule('rights', '/api/rights')" class="bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500 p-3 rounded-xl text-left transition space-y-1 group">
+          <div class="text-indigo-400 font-bold text-xs flex items-center justify-between">
+            <span>rights.js</span>
+            <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-0.5 transition"></i>
           </div>
+          <div class="text-[10px] text-slate-400 font-medium">Escalate VIP Privileges</div>
+        </button>
+
+        <button onclick="runModule('export', '/api/export')" class="bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500 p-3 rounded-xl text-left transition space-y-1 group">
+          <div class="text-emerald-400 font-bold text-xs flex items-center justify-between">
+            <span>export.js</span>
+            <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-0.5 transition"></i>
+          </div>
+          <div class="text-[10px] text-slate-400 font-medium">Unlock 4K & Watermark</div>
+        </button>
+
+        <button onclick="runModule('user-info', '/api/user-info')" class="bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500 p-3 rounded-xl text-left transition space-y-1 group">
+          <div class="text-amber-400 font-bold text-xs flex items-center justify-between">
+            <span>user-info.js</span>
+            <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-0.5 transition"></i>
+          </div>
+          <div class="text-[10px] text-slate-400 font-medium">Spoof User Profile</div>
+        </button>
+
+        <button onclick="runModule('verify', '/api/verify')" class="bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500 p-3 rounded-xl text-left transition space-y-1 group col-span-2 sm:col-span-1">
+          <div class="text-rose-400 font-bold text-xs flex items-center justify-between">
+            <span>verify.js</span>
+            <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-0.5 transition"></i>
+          </div>
+          <div class="text-[10px] text-slate-400 font-medium">Bypass Token Signature</div>
+        </button>
+      </div>
+
+      <!-- Tombol Eksekusi Semua Sekaligus -->
+      <button onclick="runAllModules()" class="w-full bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition active:scale-[0.99] shadow-lg shadow-cyan-600/20 text-xs">
+        <i class="fa-solid fa-bolt"></i> Execute All Bypass Modules
+      </button>
+
+      <!-- Log Output Box -->
+      <div class="space-y-2 pt-2">
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400 font-bold">MODULE EXECUTION LOG:</span>
+          <button onclick="clearLogs()" class="text-[10px] text-cyan-400 hover:underline">Clear Log</button>
         </div>
-        <div>
-          <span class="text-[10px] font-bold text-indigo-400 block">PASSWORD:</span>
-          <div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl mt-1">
-            <span id="ccPassword" class="font-bold text-purple-300 font-mono text-xs break-all"></span>
-            <button onclick="copyText('ccPassword', 'Password disalin!')" class="text-xs bg-indigo-600/30 px-3 py-1 rounded-lg font-bold text-white">Salin</button>
-          </div>
-        </div>
-        <div>
-          <span class="text-[10px] font-bold text-indigo-400 block">LINK VERIFIKASI:</span>
-          <div id="ccInbox" class="text-xs text-slate-300 bg-slate-900 p-3 rounded-xl mt-1 min-h-[50px] flex items-center justify-center text-center">
-            Menunggu link verifikasi...
-          </div>
+        <div id="logBox" class="text-[11px] font-mono text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800 h-52 overflow-y-auto space-y-2">
+          <div class="text-slate-500">[System] Ready. Pilih modul di atas untuk menguji skrip JavaScript backend.</div>
         </div>
       </div>
+
     </div>
 
-    <div id="contentManual" class="hidden bg-slate-900/85 rounded-3xl p-6 border border-indigo-500/20 shadow-2xl space-y-4">
-      <h2 class="font-bold text-sm text-white">Verifikasi Manual Link CapCut</h2>
-      <input type="email" id="manualEmail" placeholder="Email CapCut" class="w-full bg-slate-950 border border-indigo-500/30 rounded-xl p-3 text-xs font-mono text-white">
-      <textarea id="manualLink" rows="3" placeholder="https://..." class="w-full bg-slate-950 border border-indigo-500/30 rounded-xl p-3 text-xs font-mono text-white"></textarea>
-      <button onclick="verifyManualLink()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-xs">Verifikasi Link Sekarang</button>
-      <div id="manualResult" class="hidden p-3 rounded-xl text-xs font-bold border text-center"></div>
-    </div>
-
-    <div class="bg-slate-900/80 rounded-3xl p-5 border border-indigo-500/20 shadow-xl space-y-3">
-      <span class="text-xs font-bold text-indigo-200 block">Riwayat Akun Generated</span>
-      <div id="historyList" class="text-xs text-slate-400 italic">Belum ada riwayat.</div>
-    </div>
   </main>
 
   <script>
-    let currentEmail = '', currentCookie = '', pollInterval = null;
-    let ccHistory = JSON.parse(localStorage.getItem('cc_pro_history') || '[]');
-    window.onload = renderHistory;
+    const logBox = document.getElementById('logBox');
 
-    function switchTab(mode) {
-      if (pollInterval) clearInterval(pollInterval);
-      if (mode === 'auto') {
-        document.getElementById('tabAuto').className = "flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs shadow-md transition";
-        document.getElementById('tabManual').className = "flex-1 py-3 px-4 rounded-xl text-slate-300 font-bold text-xs hover:bg-white/5 transition";
-        document.getElementById('contentAuto').classList.remove('hidden');
-        document.getElementById('contentManual').classList.add('hidden');
-      } else {
-        document.getElementById('tabManual').className = "flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs shadow-md transition";
-        document.getElementById('tabAuto').className = "flex-1 py-3 px-4 rounded-xl text-slate-300 font-bold text-xs hover:bg-white/5 transition";
-        document.getElementById('contentManual').classList.remove('hidden');
-        document.getElementById('contentAuto').classList.add('hidden');
+    function clearLogs() {
+      logBox.innerHTML = '<div class="text-slate-500">[System] Log dibersihkan.</div>';
+    }
+
+    async function runModule(name, endpoint) {
+      const email = document.getElementById('targetEmail').value.trim();
+      logBox.innerHTML += `<div class="text-cyan-400 animate-fade">[${name}.js] Mengirim permintaan ke ${endpoint}...</div>`;
+      logBox.scrollTop = logBox.scrollHeight;
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const json = await res.json();
+
+        if (json.status) {
+          logBox.innerHTML += `<div class="text-emerald-400 animate-fade">[${name}.js SUCCESS] ${json.message} <br><span class="text-slate-400">Data: ${JSON.stringify(json.data)}</span></div>`;
+        } else {
+          logBox.innerHTML += `<div class="text-rose-400 animate-fade">[${name}.js FAILED] ${json.message}</div>`;
+        }
+      } catch (e) {
+        logBox.innerHTML += `<div class="text-rose-400 animate-fade">[${name}.js ERROR] Gagal menghubungi endpoint server.</div>`;
+      }
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    async function runAllModules() {
+      clearLogs();
+      const modules = [
+        { name: 'subscription', url: '/api/subscription' },
+        { name: 'rights', url: '/api/rights' },
+        { name: 'export', url: '/api/export' },
+        { name: 'user-info', url: '/api/user-info' },
+        { name: 'verify', url: '/api/verify' }
+      ];
+
+      for (let m of modules) {
+        await runModule(m.name, m.url);
+        await new Promise(r => setTimeout(r, 300));
       }
     }
-
-    async function generateCC() {
-      const btn = document.getElementById('btnGenCC');
-      btn.disabled = true;
-      if (pollInterval) clearInterval(pollInterval);
-      try {
-        const res = await fetch('/api/generate-cc', { method: 'POST' });
-        const json = await res.json();
-        if (json.status) {
-          currentEmail = json.email;
-          currentCookie = json.hpCookieHeader;
-          document.getElementById('ccEmail').innerText = currentEmail;
-          document.getElementById('ccPassword').innerText = json.password;
-          document.getElementById('ccBox').classList.remove('hidden');
-          document.getElementById('ccInbox').innerHTML = '<span class="text-amber-400">Menunggu link verifikasi...</span>';
-          saveToHistory(currentEmail, json.password, currentCookie);
-          document.getElementById('manualEmail').value = currentEmail;
-          pollInterval = setInterval(() => checkInboxCC(currentEmail, currentCookie, 'ccInbox'), 3000);
-        } else alert(json.message);
-      } catch (e) { alert('Gagal terhubung'); }
-      finally { btn.disabled = false; }
-    }
-
-    async function checkInboxCC(email, cookie, elementId) {
-      try {
-        const res = await fetch('/api/check-cc', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, hpCookieHeader: cookie })
-        });
-        const json = await res.json();
-        if (json.status && json.found) {
-          if (elementId === 'ccInbox') clearInterval(pollInterval);
-          document.getElementById(elementId).innerHTML = `<a href="${json.verificationLink}" target="_blank" class="text-indigo-300 underline break-all">${json.verificationLink}</a>`;
-          updateHistoryStatus(email, json.verificationLink);
-        }
-      } catch (e) {}
-    }
-
-    async function verifyManualLink() {
-      const email = document.getElementById('manualEmail').value.trim();
-      const verificationLink = document.getElementById('manualLink').value.trim();
-      const resBox = document.getElementById('manualResult');
-      try {
-        const res = await fetch('/api/verify-cc', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, verificationLink })
-        });
-        const json = await res.json();
-        resBox.classList.remove('hidden');
-        resBox.className = "p-3 rounded-xl text-xs font-bold border bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-center";
-        resBox.innerHTML = `STATUS: ${json.proStatus || 'PRO_TRIAL_ACTIVE'}`;
-      } catch (e) { alert('Gagal verifikasi'); }
-    }
-
-    function saveToHistory(email, password, cookie) {
-      ccHistory.unshift({ email, password, cookie, link: '' });
-      if (ccHistory.length > 10) ccHistory.pop();
-      localStorage.setItem('cc_pro_history', JSON.stringify(ccHistory));
-      renderHistory();
-    }
-    function updateHistoryStatus(email, link) {
-      const item = ccHistory.find(h => h.email === email);
-      if (item) { item.link = link; localStorage.setItem('cc_pro_history', JSON.stringify(ccHistory)); renderHistory(); }
-    }
-    function renderHistory() {
-      const list = document.getElementById('historyList');
-      if (ccHistory.length === 0) { list.innerHTML = "Belum ada riwayat."; return; }
-      list.innerHTML = '';
-      ccHistory.forEach((h, idx) => {
-        const div = document.createElement('div');
-        div.className = "bg-slate-950 p-3 rounded-xl border border-indigo-500/10 text-xs space-y-1 mt-2";
-        div.innerHTML = `<div class="flex justify-between items-center"><span class="font-mono font-bold text-indigo-300">${h.email}</span><button onclick="document.getElementById('manualEmail').value='${h.email}'; document.getElementById('manualLink').value='${h.link}'; switchTab('manual');" class="bg-indigo-600 text-white px-2 py-0.5 rounded">Verif</button></div>`;
-        list.appendChild(div);
-      });
-    }
-    function copyText(id, msg) { navigator.clipboard.writeText(document.getElementById(id).innerText); alert(msg); }
   </script>
 </body>
 </html>
