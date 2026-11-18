@@ -1,6 +1,6 @@
 "use strict";
 
-const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
 async function bypassVip(url, options = {}) {
   const startTime = Date.now();
@@ -18,58 +18,75 @@ async function bypassVip(url, options = {}) {
 
     let finalUrl = null;
 
-    const apiEndpoints = [
-      `https://bypass.vip/api/bypass?url=${encodeURIComponent(url)}`,
-      `https://bypass.vip/userscript.html?url=${encodeURIComponent(url)}&time=0&key=`
-    ];
+    const targetUrl = `https://bypass.vip/userscript.html?url=${encodeURIComponent(url)}&time=0&key=`;
+    
+    let res = await fetch(targetUrl, {
+      method: "GET",
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Referer": "https://bypass.vip/"
+      },
+      redirect: "follow",
+      signal: AbortSignal.timeout(20000)
+    });
 
-    for (const endpoint of apiEndpoints) {
-      try {
-        const res = await fetch(endpoint, {
-          method: "GET",
-          headers: {
-            "User-Agent": USER_AGENT,
-            "Accept": "application/json, text/html,application/xhtml+xml,*/*"
-          },
-          redirect: "follow",
-          signal: AbortSignal.timeout(15000)
-        });
+    let currentUrl = res.url || "";
+    
+    try {
+      const uObj = new URL(currentUrl);
+      const rParam = uObj.searchParams.get("redirect") || uObj.searchParams.get("url") || uObj.searchParams.get("to");
+      if (rParam && !rParam.includes("bypass.vip") && rParam !== url) {
+        finalUrl = decodeURIComponent(rParam);
+      }
+    } catch {}
 
-        const resUrl = res.url || "";
-        const uObj = new URL(resUrl);
-        const rParam = uObj.searchParams.get("redirect") || uObj.searchParams.get("url") || uObj.searchParams.get("to");
-        if (rParam && !rParam.includes("bypass.vip")) {
-          finalUrl = decodeURIComponent(rParam);
-          break;
-        }
+    if (!finalUrl || finalUrl === url || finalUrl.includes("bypass.vip")) {
+      const text = await res.text();
+      
+      const patterns = [
+        /[?&]redirect=([^&"'\s]+)/i,
+        /[?&]url=([^&"'\s]+)/i,
+        /window\.location(?:\.href|\.replace)?\s*=\s*["'](https?:\/\/[^"']+)["']/i,
+        /href=["'](https?:\/\/[^"']+)["']/i
+      ];
 
-        const text = await res.text();
-        
-        try {
-          const json = JSON.parse(text);
-          const parsed = json.url || json.destination || json.bypassed || json.result || json.link;
-          if (parsed && !parsed.includes("bypass.vip")) {
-            finalUrl = parsed;
-            break;
-          }
-        } catch {}
-
-        const match = text.match(/[?&]redirect=([^&"'\s]+)/i) || 
-                      text.match(/[?&]url=([^&"'\s]+)/i) ||
-                      text.match(/window\.location(?:\.href)?\s*=\s*["'](https?:\/\/[^"']+)["']/i);
-        if (match && match[1]) {
-          const candidate = decodeURIComponent(match[1]);
-          if (!candidate.includes("bypass.vip")) {
+      for (const rx of patterns) {
+        const m = text.match(rx);
+        if (m && m[1]) {
+          let candidate = m[1];
+          try {
+            candidate = decodeURIComponent(candidate);
+          } catch {}
+          if (!candidate.includes("bypass.vip") && candidate !== url && candidate.startsWith("http")) {
             finalUrl = candidate;
             break;
           }
         }
-      } catch (err) {
-        // Lanjutkan ke endpoint berikutnya
       }
     }
 
-    if (finalUrl && !finalUrl.includes("bypass.vip")) {
+    if (!finalUrl || finalUrl === url || finalUrl.includes("bypass.vip")) {
+      const apiRes = await fetch(`https://bypass.vip/api/bypass?url=${encodeURIComponent(url)}`, {
+        method: "GET",
+        headers: {
+          "User-Agent": USER_AGENT,
+          "Accept": "application/json, text/plain, */*",
+          "Referer": "https://bypass.vip/"
+        },
+        signal: AbortSignal.timeout(15000)
+      });
+      const apiText = await apiRes.text();
+      try {
+        const json = JSON.parse(apiText);
+        const parsed = json.url || json.destination || json.bypassed || json.result || json.link;
+        if (parsed && !parsed.includes("bypass.vip") && parsed !== url) {
+          finalUrl = parsed;
+        }
+      } catch {}
+    }
+
+    if (finalUrl && finalUrl !== url && !finalUrl.includes("bypass.vip")) {
       result.status = true;
       result.data = {
         source_url: url,
