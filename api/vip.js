@@ -1,7 +1,7 @@
 "use strict";
 
 /*
- * Engine Bypass.vip (Robust HTML & API Extractor)
+ * Engine Bypass.vip (Updated sesuai mekanisme redirect Userscript asli)
  */
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -22,7 +22,7 @@ async function bypassVip(url, options = {}) {
 
     let finalUrl = null;
 
-    // 1. Coba panggil halaman userscript.html dari bypass.vip langsung
+    // Memanggil endpoint userscript.html bypass.vip dengan redirect: "manual" atau mengikuti redirectnya
     const targetUrl = `https://bypass.vip/userscript.html?url=${encodeURIComponent(url)}&time=0&key=`;
     
     let res = await fetch(targetUrl, {
@@ -35,48 +35,29 @@ async function bypassVip(url, options = {}) {
       signal: AbortSignal.timeout(20000)
     });
 
-    if (res.url && !res.url.includes("bypass.vip/userscript.html") && !res.url.includes("bypass.vip/api")) {
+    // Cek apakah URL akhir berisi parameter redirect seperti pada userscript aslinya
+    const currentUrlObj = new URL(res.url);
+    const rawRedirect = currentUrlObj.searchParams.get("redirect");
+
+    if (rawRedirect) {
+      try {
+        finalUrl = decodeURIComponent(rawRedirect);
+      } catch {
+        finalUrl = rawRedirect;
+      }
+    } else if (res.url && !res.url.includes("bypass.vip/userscript.html") && !res.url.includes("bypass.vip/api")) {
       finalUrl = res.url;
     } else {
       let text = await res.text();
       
-      // Cari berbagai pola parameter redirect / url di dalam HTML atau script
-      const patterns = [
-        /[?&]redirect=([^&"'\s]+)/i,
-        /[?&]url=([^&"'\s]+)/i,
-        /window\.location\.href\s*=\s*["']([^"']+)["']/i,
-        /window\.location\.replace\s*\(\s*["']([^"']+)["']\s*\)/i,
-        /href=["'](https?:\/\/[^"']+)["']/i
-      ];
-
-      for (const rx of patterns) {
-        const m = text.match(rx);
-        if (m && m[1]) {
-          let candidate = m[1];
-          if (!candidate.includes("bypass.vip")) {
-            try {
-              finalUrl = decodeURIComponent(candidate);
-              break;
-            } catch {
-              finalUrl = candidate;
-              break;
-            }
-          }
-        }
-      }
-
-      // Jika belum ketemu, coba panggil endpoint API JSON mereka
-      if (!finalUrl || finalUrl.includes("bypass.vip")) {
-        const apiRes = await fetch(`https://bypass.vip/api/bypass?url=${encodeURIComponent(url)}`, {
-          method: "GET",
-          headers: { "User-Agent": USER_AGENT, "Accept": "application/json, text/plain, */*" },
-          signal: AbortSignal.timeout(15000)
-        });
-        const apiText = await apiRes.text();
+      // Cari pola parameter ?redirect= atau url= di dalam teks HTML/script
+      const match = text.match(/[?&]redirect=([^&"'\s]+)/i) || text.match(/[?&]url=([^&"'\s]+)/i);
+      if (match && match[1]) {
         try {
-          const json = JSON.parse(apiText);
-          finalUrl = json.url || json.destination || json.bypassed || json.result || json.link;
-        } catch {}
+          finalUrl = decodeURIComponent(match[1]);
+        } catch {
+          finalUrl = match[1];
+        }
       }
     }
 
