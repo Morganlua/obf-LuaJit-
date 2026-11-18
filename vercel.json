@@ -1,14 +1,21 @@
 {
-  "version": 2,
-  "functions": {
-    "api/*.js": {
-      "maxDuration": 60
-    }
-  },
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/api/mgvt", "destination": "/api/mgvt.js" },
-    { "source": "/api/umpc", "destination": "/api/umpc.js" },
-    { "source": "/api", "destination": "/api/index.js" },
-    { "source": "/(.*)", "destination": "/public/index.html" }
+    {
+      "source": "/api/mgvt",
+      "destination": "/api/mgvt.js"
+    },
+    {
+      "source": "/api/umpc",
+      "destination": "/api/umpc.js"
+    },
+    {
+      "source": "/api",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/public/index.html"
+    }
   ]
 }

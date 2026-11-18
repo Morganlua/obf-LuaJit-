@@ -1,9 +1,11 @@
 {
   "name": "noxis-link-bypass",
   "version": "1.0.0",
-  "description": "Noxis Lua Link Bypass - Safelinku & BicoLink",
-  "main": "server.js",
+  "description": "Link Bypass - Safelinku & BicoLink (Vercel Ready)",
   "scripts": {
     "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
