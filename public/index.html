@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Noxis Link Bypass — SFL & BicoLink</title>
+  <title>Noxis Link Bypass — SFL, Bico & VIP</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
@@ -194,6 +194,11 @@
       color: #111111;
     }
 
+    .engine-value.detected-vip {
+      background: var(--yellow);
+      color: #111111;
+    }
+
     .btn-bypass {
       margin-top: 18px;
       width: 100%;
@@ -376,6 +381,36 @@
       display: none;
     }
 
+    /* SUPPORTED URLS TICKER / SECTION */
+    .supported-section {
+      background: var(--surface);
+      border: var(--border);
+      box-shadow: var(--shadow);
+      padding: 16px 20px;
+    }
+
+    .supported-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .supported-marquee {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      background: var(--bg);
+      border: 2px solid #111111;
+      padding: 8px 12px;
+      overflow-x: auto;
+      white-space: nowrap;
+      color: var(--orange-dark);
+    }
+
     footer {
       background: var(--surface);
       border-top: var(--border);
@@ -403,11 +438,12 @@
   <header>
     <div class="brand">
       <div class="brand-badge">NOXIS</div>
-      <div class="brand-title">Bypass Link SFL & BicoLink</div>
+      <div class="brand-title">Bypass Link SFL, Bico & VIP</div>
     </div>
     <div class="support-pills">
-      <span class="pill">Safelinku (sfl.gl)</span>
+      <span class="pill">Safelinku</span>
       <span class="pill">BicoLink</span>
+      <span class="pill">Bypass.VIP / DLL</span>
     </div>
   </header>
 
@@ -425,7 +461,7 @@
           type="url"
           id="inputLink"
           class="neo-input"
-          placeholder="https://sfl.gl/... atau https://bicolink.com/..."
+          placeholder="https://sfl.gl/..., https://bicolink.com/... atau link DLL..."
           autocomplete="off"
           oninput="detectEngine()"
         />
@@ -485,11 +521,22 @@
         </a>
       </div>
     </section>
+
+    <!-- SUPPORTED URLS TICKER (DLL) -->
+    <section class="supported-section">
+      <div class="supported-title">
+        <span>Support Url List</span>
+        <span class="pill" style="background:var(--yellow); font-size: 0.7rem;">+100 DOMAIN DLL</span>
+      </div>
+      <div class="supported-marquee">
+        sfl.gl | bicolink.com | bico.link | loot-link.com | loot-links.com | lootdest.com | linkvertise.com | adfoc.us | boost.ink | cuty.io | rekonise.com | sub2unlock.com | lootlabs.gg | mega-guy.com &amp; DLL...
+      </div>
+    </section>
   </main>
 
   <footer>
     <div class="footer-main">Website ini di buat oleh king Noxis Lua yang ganteng</div>
-    <div class="footer-sub">support engine Bypass BicoLink Dan Safelinku bypass</div>
+    <div class="footer-sub">support engine Bypass BicoLink, Safelinku &amp; Bypass.VIP DLL</div>
   </footer>
 
   <script>
@@ -520,8 +567,10 @@
           badge.classList.add("detected-bico");
           return "umpc";
         }
-        badge.textContent = "Host tidak didukung (Gunakan sfl.gl / bicolink)";
-        return null;
+        // Semua domain shortener / loot / linkvertise / DLL lari ke engine vip
+        badge.textContent = "Bypass VIP / Shortener DLL";
+        badge.classList.add("detected-vip");
+        return "vip";
       } catch {
         badge.textContent = "Format URL tidak valid";
         return null;
@@ -568,7 +617,7 @@
       const errorBox = document.getElementById("errorBox");
 
       if (!rawUrl) {
-        errorBox.textContent = "Masukkan link sfl.gl atau bicolink terlebih dahulu!";
+        errorBox.textContent = "Masukkan link shortlink terlebih dahulu!";
         errorBox.style.display = "block";
         return;
       }
