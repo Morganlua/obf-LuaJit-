@@ -1,10 +1,7 @@
 {
-  "name": "noxis-link-bypass",
-  "version": "1.0.0",
-  "description": "Link Bypass - Safelinku & BicoLink (Vercel Ready)",
-  "scripts": {
-    "start": "node server.js"
-  },
+  "name": "noxis-bypass-full",
+  "version": "2.0.0",
+  "description": "Noxis Link Bypass (Safelinku, BicoLink, Bypass.VIP)",
   "engines": {
     "node": ">=18.0.0"
   }
