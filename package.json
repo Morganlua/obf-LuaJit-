@@ -1,7 +1,7 @@
 {
-  "name": "noxis-bypass-full",
-  "version": "2.0.0",
-  "description": "Noxis Link Bypass (Safelinku, BicoLink, Bypass.VIP)",
+  "name": "noxislua-bypasser",
+  "version": "2.2.0",
+  "description": "NoxisLua Bypasser (Safelinku & BicoLink)",
   "engines": {
     "node": ">=18.0.0"
   }
