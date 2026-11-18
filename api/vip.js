@@ -1,7 +1,7 @@
 "use strict";
 
 /*
- * Engine Bypass.vip (Updated API endpoint & HTML fallback parser)
+ * Engine Bypass.vip (Robust HTML & API Extractor)
  */
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -19,57 +19,64 @@ async function bypassVip(url, options = {}) {
 
   try {
     if (!url) throw new Error("URL target belum diisi.");
+
+    let finalUrl = null;
+
+    // 1. Coba panggil halaman userscript.html dari bypass.vip langsung
+    const targetUrl = `https://bypass.vip/userscript.html?url=${encodeURIComponent(url)}&time=0&key=`;
     
-    // Coba endpoint API resmi jika tersedia, atau fetch halaman bypass.vip dengan parameter url
-    const targetApi = `https://bypass.vip/api/bypass?url=${encodeURIComponent(url)}`;
-    
-    let res = await fetch(targetApi, {
+    let res = await fetch(targetUrl, {
       method: "GET",
       headers: {
         "User-Agent": USER_AGENT,
-        "Accept": "application/json, text/plain, */*"
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
       },
       redirect: "follow",
       signal: AbortSignal.timeout(20000)
     });
 
-    let text = await res.text();
-    let finalUrl = null;
+    if (res.url && !res.url.includes("bypass.vip/userscript.html") && !res.url.includes("bypass.vip/api")) {
+      finalUrl = res.url;
+    } else {
+      let text = await res.text();
+      
+      // Cari berbagai pola parameter redirect / url di dalam HTML atau script
+      const patterns = [
+        /[?&]redirect=([^&"'\s]+)/i,
+        /[?&]url=([^&"'\s]+)/i,
+        /window\.location\.href\s*=\s*["']([^"']+)["']/i,
+        /window\.location\.replace\s*\(\s*["']([^"']+)["']\s*\)/i,
+        /href=["'](https?:\/\/[^"']+)["']/i
+      ];
 
-    // Coba parse sebagai JSON
-    try {
-      const json = JSON.parse(text);
-      finalUrl = json.url || json.destination || json.bypassed || json.result || json.link;
-    } catch {
-      // Jika bukan JSON, cek apakah halaman userscript / html yang memuat parameter redirect
-      const match = text.match(/[?&]redirect=([^&"'\s]+)/) || text.match(/url=([^&"'\s]+)/);
-      if (match) {
-        try {
-          finalUrl = decodeURIComponent(match[1]);
-        } catch {
-          finalUrl = match[1];
+      for (const rx of patterns) {
+        const m = text.match(rx);
+        if (m && m[1]) {
+          let candidate = m[1];
+          if (!candidate.includes("bypass.vip")) {
+            try {
+              finalUrl = decodeURIComponent(candidate);
+              break;
+            } catch {
+              finalUrl = candidate;
+              break;
+            }
+          }
         }
       }
-    }
 
-    // Jika lewat API /api/bypass gagal atau mengembalikan html/error, coba fallback ke userscript.html
-    if (!finalUrl || finalUrl.includes("bypass.vip")) {
-      const fallbackUrl = `https://bypass.vip/userscript.html?url=${encodeURIComponent(url)}&time=0&key=`;
-      const res2 = await fetch(fallbackUrl, {
-        method: "GET",
-        headers: { "User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml" },
-        redirect: "follow",
-        signal: AbortSignal.timeout(20000)
-      });
-      
-      if (res2.url && !res2.url.includes("bypass.vip/userscript.html")) {
-        finalUrl = res2.url;
-      } else {
-        const text2 = await res2.text();
-        const m2 = text2.match(/redirect=([^&"'\s]+)/);
-        if (m2) {
-          finalUrl = decodeURIComponent(m2[1]);
-        }
+      // Jika belum ketemu, coba panggil endpoint API JSON mereka
+      if (!finalUrl || finalUrl.includes("bypass.vip")) {
+        const apiRes = await fetch(`https://bypass.vip/api/bypass?url=${encodeURIComponent(url)}`, {
+          method: "GET",
+          headers: { "User-Agent": USER_AGENT, "Accept": "application/json, text/plain, */*" },
+          signal: AbortSignal.timeout(15000)
+        });
+        const apiText = await apiRes.text();
+        try {
+          const json = JSON.parse(apiText);
+          finalUrl = json.url || json.destination || json.bypassed || json.result || json.link;
+        } catch {}
       }
     }
 
