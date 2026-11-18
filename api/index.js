@@ -1,28 +1,16 @@
 "use strict";
 
-/*
- * Router tunggal untuk deployment serverless (Vercel, Node runtime).
- * Endpoint:
- *   GET /api/mgvt?url=<link sfl.gl>   -> safelinku
- *   GET /api/umpc?url=<link bicolink> -> bicolink
- *   GET /api/vip?url=<link vip/loot>  -> bypass.vip
- *   GET /api?url=...&engine=auto      -> deteksi otomatis berdasarkan hostname
- */
-
 const mgvt = require("./mgvt");
 const umpc = require("./umpc");
-const vip = require("./vip");
 
 const ENGINES = {
   mgvt: { run: (u, o) => mgvt.bypass(u, o) },
   umpc: { run: (u, o) => umpc.bypass(u, o) },
-  vip:  { run: (u, o) => vip.bypass(u, o) },
 };
 
 const HOSTS = [
   { test: /(^|\.)sfl\.gl$/i, engine: "mgvt" },
   { test: /(^|\.)(bicolink\.com|bico\.link)$/i, engine: "umpc" },
-  { test: /(^|\.)(loot-link\.com|loot-links\.com|lootdest\.com|linkvertise\.com|adfoc\.us|boost\.ink|cuty\.io|rekonise\.com|sub2unlock\.com|mega-guy\.com|lootlabs\.com)$/i, engine: "vip" },
 ];
 
 function pickEngine(url) {
@@ -48,7 +36,7 @@ async function resolveRequest(req) {
       payload: {
         status: false,
         error: "Parameter url wajib diisi.",
-        engines: ["mgvt", "umpc", "vip"],
+        engines: ["mgvt", "umpc"],
       },
     };
   }
@@ -57,7 +45,7 @@ async function resolveRequest(req) {
       status: 422,
       payload: {
         status: false,
-        error: "Engine tidak dikenal untuk host tersebut. Pakai /api/mgvt, /api/umpc, /api/vip, atau ?engine=mgvt|umpc|vip.",
+        error: "Engine tidak dikenal atau tidak didukung untuk host tersebut.",
       },
     };
   }
