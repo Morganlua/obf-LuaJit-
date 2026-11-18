@@ -1,7 +1,7 @@
 "use strict";
 
 /*
- * Engine Bypass.vip untuk integrasi Vercel (Noxis Bypass Link)
+ * Engine Bypass.vip (Updated API endpoint)
  */
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -20,40 +20,53 @@ async function bypassVip(url, options = {}) {
   try {
     if (!url) throw new Error("URL target belum diisi.");
     
-    const targetApi = `https://bypass.vip/userscript.html?url=${encodeURIComponent(url)}&time=0&key=`;
+    // Menggunakan endpoint API / free endpoint backend bypass.vip yang menghasilkan JSON atau redirect langsung
+    const targetApi = `https://bypass.vip/api/bypass?url=${encodeURIComponent(url)}`;
     
     const res = await fetch(targetApi, {
       method: "GET",
       headers: {
         "User-Agent": USER_AGENT,
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        "Accept": "application/json, text/plain, */*"
       },
       redirect: "follow",
       signal: AbortSignal.timeout(25000)
     });
 
-    const finalUrl = res.url;
-    if (finalUrl && finalUrl !== targetApi && !finalUrl.includes("bypass.vip/userscript.html")) {
-      result.status = true;
-      result.data = {
-        source_url: url,
-        bypassed_url: finalUrl,
-        host: new URL(finalUrl).hostname,
-      };
-    } else {
-      const html = await res.text();
-      const match = html.match(/redirect=([^&"'\s]+)/);
-      if (match) {
-        const decoded = decodeURIComponent(match[1]);
+    const contentType = res.headers.get("content-type") || "";
+    
+    if (contentType.includes("application/json")) {
+      const json = await res.json();
+      const finalUrl = json.url || json.destination || json.bypassed || json.result;
+      if (finalUrl) {
         result.status = true;
         result.data = {
           source_url: url,
-          bypassed_url: decoded,
-          host: new URL(decoded).hostname,
+          bypassed_url: finalUrl,
+          host: new URL(finalUrl).hostname,
         };
       } else {
-        throw new Error("Gagal mengekstrak URL tujuan dari bypass.vip.");
+        throw new Error("Format JSON dari bypass.vip tidak dikenali.");
       }
+    } else {
+      const text = await res.text();
+      // Coba parse jika berupa JSON string atau ambil lewat regex URL
+      try {
+        const json = JSON.parse(text);
+        const finalUrl = json.url || json.destination || json.bypassed;
+        if (finalUrl) {
+          result.status = true;
+          result.data = {
+            source_url: url,
+            bypassed_url: finalUrl,
+            host: new URL(finalUrl).hostname,
+          };
+          result.execution_time_ms = Date.now() - startTime;
+          return result;
+        }
+      } catch {}
+
+      throw new Error("Gagal mendapatkan respons JSON valid dari bypass.vip.");
     }
   } catch (e) {
     result.error = e.message || "Unknown error";
