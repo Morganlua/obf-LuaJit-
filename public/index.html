@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Noxis Link Bypass — SFL, Bico & VIP</title>
+  <title>NoxisLua Bypasser</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #fff8f0;
+      --bg: #fdfbf7;
       --surface: #ffffff;
-      --orange: #ff6b00;
-      --orange-dark: #e05a00;
-      --yellow: #ffde00;
+      --orange: #ff4500;
+      --orange-hover: #e03d00;
+      --yellow: #ffcc00;
       --green: #00e676;
-      --blue: #38bdf8;
-      --red: #ff4757;
+      --blue: #00b0ff;
+      --red: #ff3d00;
       --ink: #111111;
-      --border: 3px solid #111111;
+      --border: 4px solid #111111;
       --shadow: 6px 6px 0px #111111;
       --shadow-sm: 3px 3px 0px #111111;
     }
@@ -32,7 +32,7 @@
     body {
       background-color: var(--bg);
       background-image: radial-gradient(#111111 1.2px, transparent 1.2px);
-      background-size: 22px 22px;
+      background-size: 28px 28px;
       color: var(--ink);
       font-family: 'Space Grotesk', sans-serif;
       min-height: 100vh;
@@ -44,52 +44,54 @@
     header {
       background: var(--orange);
       border-bottom: var(--border);
-      padding: 18px 24px;
+      padding: 24px 32px;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 16px;
+      box-shadow: 0 4px 0px #111111;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
 
     .brand-badge {
-      background: var(--surface);
+      background: var(--yellow);
       border: var(--border);
       box-shadow: var(--shadow-sm);
-      padding: 6px 12px;
+      padding: 8px 16px;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: 0.9rem;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
     }
 
     .brand-title {
-      font-size: 1.55rem;
+      font-size: 2rem;
       font-weight: 800;
       color: #ffffff;
-      text-shadow: 2px 2px 0px #111111;
+      text-shadow: 3px 3px 0px #111111;
       text-transform: uppercase;
       letter-spacing: -0.5px;
     }
 
     .support-pills {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
     .pill {
       background: var(--yellow);
-      border: 2px solid #111111;
-      box-shadow: 2px 2px 0px #111111;
-      padding: 4px 10px;
+      border: var(--border);
+      box-shadow: var(--shadow-sm);
+      padding: 6px 14px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.78rem;
+      font-size: 0.85rem;
       font-weight: 800;
       text-transform: uppercase;
     }
@@ -97,34 +99,36 @@
     main {
       width: 100%;
       max-width: 820px;
-      margin: 32px auto;
+      margin: 40px auto;
       padding: 0 20px;
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 32px;
     }
 
     .card {
       background: var(--surface);
       border: var(--border);
       box-shadow: var(--shadow);
-      padding: 24px;
+      padding: 34px;
+      border-radius: 6px;
     }
 
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 2px dashed #111111;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 3px solid #111111;
     }
 
     .card-title {
-      font-size: 1.15rem;
+      font-size: 1.3rem;
       font-weight: 800;
       text-transform: uppercase;
+      letter-spacing: -0.3px;
     }
 
     .input-group {
@@ -135,53 +139,58 @@
 
     .input-label {
       font-weight: 800;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
 
     .neo-input {
       width: 100%;
-      height: 54px;
-      padding: 0 16px;
+      height: 60px;
+      padding: 0 20px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.95rem;
+      font-size: 1rem;
       font-weight: 700;
       background: var(--bg);
       border: var(--border);
       color: var(--ink);
       outline: none;
-      transition: background 0.15s, box-shadow 0.15s;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.15s ease;
     }
 
     .neo-input:focus {
       background: #ffffff;
-      box-shadow: var(--shadow-sm);
+      transform: translate(-2px, -2px);
+      box-shadow: 5px 5px 0px #111111;
     }
 
     .engine-row {
-      margin-top: 14px;
+      margin-top: 18px;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 14px;
       background: var(--bg);
-      border: 2px solid #111111;
-      padding: 12px 16px;
+      border: var(--border);
+      padding: 16px 20px;
+      box-shadow: var(--shadow-sm);
     }
 
     .engine-label {
       font-weight: 800;
-      font-size: 0.92rem;
+      font-size: 0.95rem;
     }
 
     .engine-value {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: 0.9rem;
-      padding: 4px 12px;
-      border: 2px solid #111111;
+      font-size: 0.95rem;
+      padding: 8px 16px;
+      border: var(--border);
       background: var(--surface);
+      box-shadow: 2px 2px 0px #111111;
     }
 
     .engine-value.detected-sfl {
@@ -194,32 +203,27 @@
       color: #111111;
     }
 
-    .engine-value.detected-vip {
-      background: var(--yellow);
-      color: #111111;
-    }
-
     .btn-bypass {
-      margin-top: 18px;
+      margin-top: 24px;
       width: 100%;
-      height: 56px;
+      height: 62px;
       background: var(--orange);
       color: #ffffff;
       border: var(--border);
       box-shadow: var(--shadow);
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.15rem;
+      font-size: 1.25rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       cursor: pointer;
-      transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
     }
 
     .btn-bypass:hover:not(:disabled) {
-      background: var(--orange-dark);
-      transform: translate(-2px, -2px);
-      box-shadow: 8px 8px 0px #111111;
+      background: var(--orange-hover);
+      transform: translate(-3px, -3px);
+      box-shadow: 9px 9px 0px #111111;
     }
 
     .btn-bypass:active:not(:disabled) {
@@ -228,17 +232,18 @@
     }
 
     .btn-bypass:disabled {
-      opacity: 0.65;
+      opacity: 0.6;
       cursor: not-allowed;
     }
 
-    /* LOGS & RESULT GRID */
     .logs-box {
       background: #141414;
       color: #f8f8f2;
       border: var(--border);
-      padding: 18px;
+      box-shadow: var(--shadow);
+      padding: 22px;
       font-family: 'JetBrains Mono', monospace;
+      border-radius: 4px;
     }
 
     .logs-top {
@@ -246,23 +251,23 @@
       justify-content: space-between;
       align-items: center;
       border-bottom: 2px solid #333333;
-      padding-bottom: 10px;
-      margin-bottom: 14px;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
     }
 
     .logs-heading {
       font-weight: 800;
-      font-size: 0.92rem;
-      color: var(--orange);
+      font-size: 0.95rem;
+      color: var(--yellow);
       text-transform: uppercase;
     }
 
     .ms-badge {
       background: var(--yellow);
       color: #111111;
-      padding: 3px 10px;
+      padding: 4px 12px;
       font-weight: 800;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       border: 2px solid #ffffff;
     }
 
@@ -271,7 +276,7 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      font-size: 0.92rem;
+      font-size: 0.95rem;
     }
 
     .log-steps li {
@@ -279,7 +284,6 @@
       align-items: center;
       gap: 10px;
       color: #777777;
-      transition: color 0.2s;
     }
 
     .log-steps li.active {
@@ -298,35 +302,36 @@
     }
 
     .result-section {
-      margin-top: 20px;
-      padding-top: 18px;
-      border-top: 2px dashed #111111;
+      margin-top: 26px;
+      padding-top: 22px;
+      border-top: 3px dashed #111111;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
     }
 
     .result-row {
       display: flex;
-      gap: 10px;
+      gap: 12px;
     }
 
     .result-input {
       flex: 1;
-      height: 50px;
-      padding: 0 14px;
+      height: 56px;
+      padding: 0 18px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       font-weight: 700;
       background: #eafff3;
       border: var(--border);
       color: #111111;
       outline: none;
+      box-shadow: var(--shadow-sm);
     }
 
     .btn-copy {
-      height: 50px;
-      padding: 0 18px;
+      height: 56px;
+      padding: 0 24px;
       background: var(--yellow);
       border: var(--border);
       box-shadow: var(--shadow-sm);
@@ -334,10 +339,13 @@
       font-weight: 800;
       text-transform: uppercase;
       cursor: pointer;
+      transition: transform 0.12s ease;
     }
 
     .btn-copy:hover {
-      background: #ffe84d;
+      background: #ffd500;
+      transform: translate(-2px, -2px);
+      box-shadow: 5px 5px 0px #111111;
     }
 
     .btn-open-url {
@@ -345,22 +353,22 @@
       align-items: center;
       justify-content: center;
       width: 100%;
-      height: 52px;
+      height: 58px;
       background: var(--green);
       color: #111111;
       border: var(--border);
       box-shadow: var(--shadow);
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.05rem;
+      font-size: 1.1rem;
       font-weight: 800;
       text-transform: uppercase;
       text-decoration: none;
-      transition: transform 0.1s, box-shadow 0.1s;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
 
     .btn-open-url:hover {
-      transform: translate(-2px, -2px);
-      box-shadow: 8px 8px 0px #111111;
+      transform: translate(-3px, -3px);
+      box-shadow: 9px 9px 0px #111111;
     }
 
     .btn-open-url.disabled {
@@ -374,62 +382,34 @@
       background: var(--red);
       color: #ffffff;
       border: var(--border);
-      padding: 12px 16px;
+      box-shadow: var(--shadow-sm);
+      padding: 14px 18px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: 700;
       display: none;
-    }
-
-    /* SUPPORTED URLS TICKER / SECTION */
-    .supported-section {
-      background: var(--surface);
-      border: var(--border);
-      box-shadow: var(--shadow);
-      padding: 16px 20px;
-    }
-
-    .supported-title {
-      font-size: 0.95rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .supported-marquee {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
-      font-weight: 700;
-      background: var(--bg);
-      border: 2px solid #111111;
-      padding: 8px 12px;
-      overflow-x: auto;
-      white-space: nowrap;
-      color: var(--orange-dark);
     }
 
     footer {
       background: var(--surface);
       border-top: var(--border);
-      padding: 20px 24px;
+      padding: 26px;
       text-align: center;
+      box-shadow: 0 -4px 0px #111111;
     }
 
     .footer-main {
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: 800;
       color: var(--ink);
     }
 
     .footer-sub {
-      margin-top: 6px;
+      margin-top: 8px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.85rem;
+      font-size: 0.88rem;
       font-weight: 700;
-      color: var(--orange-dark);
+      color: var(--orange);
     }
   </style>
 </head>
@@ -438,30 +418,28 @@
   <header>
     <div class="brand">
       <div class="brand-badge">NOXIS</div>
-      <div class="brand-title">Bypass Link SFL, Bico & VIP</div>
+      <div class="brand-title">NoxisLua Bypasser</div>
     </div>
     <div class="support-pills">
       <span class="pill">Safelinku</span>
       <span class="pill">BicoLink</span>
-      <span class="pill">Bypass.VIP / DLL</span>
     </div>
   </header>
 
   <main>
-    <!-- INPUT & CONTROL CARD -->
     <section class="card">
       <div class="card-header">
-        <span class="card-title">Input Link</span>
+        <span class="card-title">Input Target Link</span>
         <span class="pill" style="background:#fff;">AUTO DETECT</span>
       </div>
 
       <div class="input-group">
-        <label class="input-label" for="inputLink">Input Link()</label>
+        <label class="input-label" for="inputLink">URL Shortlink</label>
         <input
           type="url"
           id="inputLink"
           class="neo-input"
-          placeholder="https://sfl.gl/..., https://bicolink.com/... atau link DLL..."
+          placeholder="https://sfl.gl/... atau https://bicolink.com/..."
           autocomplete="off"
           oninput="detectEngine()"
         />
@@ -472,33 +450,32 @@
         <span class="engine-value" id="engineDetected">Menunggu input link...</span>
       </div>
 
-      <button class="btn-bypass" id="btnBypass" onclick="startBypass()">Bypass</button>
+      <button class="btn-bypass" id="btnBypass" onclick="startBypass()">Mulai Bypass</button>
     </section>
 
-    <!-- LOGS & DESTINATION URL CARD -->
     <section class="card">
       <div class="card-header">
-        <span class="card-title">Logs Kolom</span>
+        <span class="card-title">Proses & Hasil</span>
       </div>
 
       <div class="logs-box">
         <div class="logs-top">
-          <span class="logs-heading">Status Proses</span>
-          <span class="ms-badge" id="msCounter">0 MS.s</span>
+          <span class="logs-heading">Status Sistem</span>
+          <span class="ms-badge" id="msCounter">0 MS</span>
         </div>
 
         <ul class="log-steps" id="logSteps">
-          <li id="step1">• mengambil url</li>
-          <li id="step2">• memulai bypass</li>
-          <li id="step3">• menyiapkan link</li>
-          <li id="step4">• berahasil bypass</li>
+          <li id="step1">• mengambil url target</li>
+          <li id="step2">• menjalankan engine bypass</li>
+          <li id="step3">• memproses dekripsi link</li>
+          <li id="step4">• berhasil mendapatkan tujuan</li>
         </ul>
       </div>
 
-      <div class="error-alert" id="errorBox" style="margin-top: 16px;"></div>
+      <div class="error-alert" id="errorBox" style="margin-top: 18px;"></div>
 
       <div class="result-section">
-        <label class="input-label" for="targetUrlOutput">Kolom Url Tujuan</label>
+        <label class="input-label" for="targetUrlOutput">URL Tujuan Akhir</label>
         <div class="result-row">
           <input
             type="text"
@@ -507,7 +484,7 @@
             readonly
             placeholder="URL hasil bypass akan muncul di sini..."
           />
-          <button class="btn-copy" onclick="copyResult()">Copy</button>
+          <button class="btn-copy" onclick="copyResult()">Salin</button>
         </div>
 
         <a
@@ -517,26 +494,15 @@
           id="btnGoUrl"
           class="btn-open-url disabled"
         >
-          Masuk Ke url
+          Buka URL Tujuan
         </a>
-      </div>
-    </section>
-
-    <!-- SUPPORTED URLS TICKER (DLL) -->
-    <section class="supported-section">
-      <div class="supported-title">
-        <span>Support Url List</span>
-        <span class="pill" style="background:var(--yellow); font-size: 0.7rem;">+100 DOMAIN DLL</span>
-      </div>
-      <div class="supported-marquee">
-        sfl.gl | bicolink.com | bico.link | loot-link.com | loot-links.com | lootdest.com | linkvertise.com | adfoc.us | boost.ink | cuty.io | rekonise.com | sub2unlock.com | lootlabs.gg | mega-guy.com &amp; DLL...
       </div>
     </section>
   </main>
 
   <footer>
-    <div class="footer-main">Website ini di buat oleh king Noxis Lua yang ganteng</div>
-    <div class="footer-sub">support engine Bypass BicoLink, Safelinku &amp; Bypass.VIP DLL</div>
+    <div class="footer-main">Website ini dibuat oleh King Noxis Lua yang ganteng</div>
+    <div class="footer-sub">NoxisLua Bypasser Engine v2.2</div>
   </footer>
 
   <script>
@@ -558,19 +524,17 @@
         const host = new URL(normalized).hostname.toLowerCase();
 
         if (/(^|\.)sfl\.gl$/.test(host)) {
-          badge.textContent = "Safelinku Bypass (mgvt)";
+          badge.textContent = "Safelinku Engine (mgvt)";
           badge.classList.add("detected-sfl");
           return "mgvt";
         }
         if (/(^|\.)(bicolink\.com|bico\.link)$/.test(host)) {
-          badge.textContent = "BicoLink Bypass (umpc)";
+          badge.textContent = "BicoLink Engine (umpc)";
           badge.classList.add("detected-bico");
           return "umpc";
         }
-        // Deteksi domain khusus VIP / Loot / Linkvertise / dll
-        badge.textContent = "Bypass.VIP Engine (" + host + ")";
-        badge.classList.add("detected-vip");
-        return "vip";
+        badge.textContent = "Host tidak didukung (Gunakan sfl.gl / bicolink)";
+        return null;
       } catch {
         badge.textContent = "Format URL tidak valid";
         return null;
@@ -599,15 +563,15 @@
       const msEl = document.getElementById("msCounter");
       msInterval = setInterval(() => {
         const diff = Math.round(performance.now() - startTimestamp);
-        msEl.textContent = `${diff} MS.s`;
-      }, 45);
+        msEl.textContent = `${diff} MS`;
+      }, 40);
     }
 
     function stopTimer(finalMs) {
       if (msInterval) clearInterval(msInterval);
       const msEl = document.getElementById("msCounter");
       const diff = typeof finalMs === "number" ? finalMs : Math.round(performance.now() - startTimestamp);
-      msEl.textContent = `${diff} MS.s`;
+      msEl.textContent = `${diff} MS`;
     }
 
     async function startBypass() {
@@ -617,7 +581,7 @@
       const errorBox = document.getElementById("errorBox");
 
       if (!rawUrl) {
-        errorBox.textContent = "Masukkan link shortlink terlebih dahulu!";
+        errorBox.textContent = "Masukkan link sfl.gl atau bicolink terlebih dahulu!";
         errorBox.style.display = "block";
         return;
       }
@@ -625,29 +589,29 @@
       const targetUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : "https://" + rawUrl;
       const engine = detectEngine();
 
+      if (!engine) {
+        errorBox.textContent = "Engine untuk link tersebut tidak dikenali atau belum didukung.";
+        errorBox.style.display = "block";
+        return;
+      }
+
       resetLogs();
       btn.disabled = true;
-      btn.textContent = "Memproses Bypass...";
+      btn.textContent = "Memproses...";
       startTimer();
 
-      // Step 1: mengambil url
       setStepState("step1", "active");
-      await new Promise((r) => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, 200));
       setStepState("step1", "done");
 
-      // Step 2: memulai bypass
       setStepState("step2", "active");
-
       const step3Timer = setTimeout(() => {
         setStepState("step2", "done");
         setStepState("step3", "active");
-      }, 2800);
+      }, 2500);
 
       try {
-        const endpoint = engine
-          ? `/api/${engine}?url=${encodeURIComponent(targetUrl)}`
-          : `/api?url=${encodeURIComponent(targetUrl)}`;
-
+        const endpoint = `/api/${engine}?url=${encodeURIComponent(targetUrl)}`;
         const res = await fetch(endpoint);
         const data = await res.json();
         clearTimeout(step3Timer);
@@ -677,7 +641,7 @@
         errorBox.style.display = "block";
       } finally {
         btn.disabled = false;
-        btn.textContent = "Bypass";
+        btn.textContent = "Mulai Bypass";
       }
     }
 
@@ -687,7 +651,7 @@
       navigator.clipboard.writeText(val);
       const copyBtn = document.querySelector(".btn-copy");
       const oldText = copyBtn.textContent;
-      copyBtn.textContent = "Copied!";
+      copyBtn.textContent = "Disalin!";
       setTimeout(() => { copyBtn.textContent = oldText; }, 1500);
     }
   </script>
