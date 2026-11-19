@@ -1,7 +1,7 @@
 {
   "name": "noxis-bypass-link",
-  "version": "3.4.0",
-  "description": "Noxis Bypass Link (Safelinku, BicoLink & Khaddavi URL)",
+  "version": "3.5.0",
+  "description": "Noxis Bypass Link (Safelinku, BicoLink, Khaddavi & Linkvertise)",
   "engines": {
     "node": ">=18.0.0"
   }
