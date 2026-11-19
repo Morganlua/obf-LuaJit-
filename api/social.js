@@ -7,9 +7,20 @@ const SOCIAL_HOST_RE =
   /(^|\.)(rekonise\.com|sub2unlock\.(com|net)|ytsubme\.com|sub4unlock\.(io|com|co|net|org|me)|unlocknow\.net|sub2get\.com|subfinal\.com|mboost\.me|social-unlock\.com|socialwolvez\.com|paster\.(so|gg)|cuty\.io|adfoc\.us|mendationforc\.info)$/i;
 
 const SKIP_HOST_RE =
-  /(^|\.)(rekonise\.com|sub2unlock\.(com|net)|ytsubme\.com|sub4unlock\.(io|com|co|net|org|me)|unlocknow\.net|sub2get\.com|subfinal\.com|mboost\.me|social-unlock\.com|socialwolvez\.com|paster\.(so|gg)|cuty\.io|adfoc\.us|mendationforc\.info|facebook\.com|twitter\.com|x\.com|youtube\.com|youtu\.be|instagram\.com|tiktok\.com|discord\.com|discord\.gg|google\.com|googleapis\.com|gstatic\.com|cloudflare\.com|jquery\.com|w3\.org)$/i;
+  /(^|\.)(rekonise\.com|sub2unlock\.(com|net)|ytsubme\.com|sub4unlock\.(io|com|co|net|org|me)|unlocknow\.net|sub2get\.com|subfinal\.com|mboost\.me|social-unlock\.com|socialwolvez\.com|paster\.(so|gg)|cuty\.io|adfoc\.us|mendationforc\.info|facebook\.com|twitter\.com|x\.com|youtube\.com|youtu\.be|instagram\.com|tiktok\.com|discord\.com|discord\.gg|google\.com|googleapis\.com|gstatic\.com|cloudflare\.com|cloudflareinsights\.com|jsdelivr\.net|unpkg\.com|bootstrapcdn\.com|fontawesome\.com|jquery\.com|w3\.org|googletagmanager\.com|google-analytics\.com|doubleclick\.net|sentry\.io)$/i;
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function decodeEntities(s) {
+  return String(s || "")
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
 
 function decodeB64(str) {
   try {
@@ -21,14 +32,26 @@ function decodeB64(str) {
   }
 }
 
+function isAssetOrTrackerUrl(u) {
+  const path = (u.pathname || "").toLowerCase();
+  if (
+    path.includes("/beacon.min.js") ||
+    path.includes("/cdn-cgi/") ||
+    /\.(?:js|css|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot|map)(?:$|[?#])/i.test(path)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function guessDestination(text, sourceUrl) {
   if (!text) return null;
   const cleaned = String(text).replace(/\\\//g, "/");
   const matches = cleaned.match(/https?:\/\/[^\s"'<>\\)\]]+/gi) || [];
   for (const raw of matches) {
     try {
-      const u = new URL(raw.replace(/[,;]+$/, ""));
-      if (!SKIP_HOST_RE.test(u.hostname) && u.href !== sourceUrl) {
+      const u = new URL(raw.replace(/[,;'"`\]]+$/, ""));
+      if (!SKIP_HOST_RE.test(u.hostname) && !isAssetOrTrackerUrl(u) && u.href !== sourceUrl) {
         return u.href;
       }
     } catch {}
@@ -202,18 +225,64 @@ async function bypassSub4Unlock(parsedUrl, trace) {
   const s = new SimpleSession();
   const r = await s.get(parsedUrl.href);
   trace.push(`sub4unlock get -> ${r.status}`);
+  const html = r.text || "";
+
+  // Jika langsung redirect ke URL eksternal non-tracker
+  if (r.url && r.url !== parsedUrl.href) {
+    try {
+      const ru = new URL(r.url);
+      if (!SKIP_HOST_RE.test(ru.hostname) && !isAssetOrTrackerUrl(ru)) {
+        return ru.href;
+      }
+    } catch {}
+  }
+
+  // Pola eksplisit URL tujuan di script / tombol / redirect / base64
   const pats = [
-    /window\.open\(["'](https?:\/\/[^"']+)/i,
-    /fun2\s*=\s*function[^}]*?["'](https?:\/\/[^"']+)/i,
-    /(?:var|let|const)\s+\w+\s*=\s*["'](https?:\/\/[^"']+)["']\s*;\s*window\.open/i,
+    /(?:window\.location(?:\.href)?|window\.open|location\.replace)\s*\(\s*["'`](https?:\/\/[^"'`]+)["'`]/i,
+    /(?:var|let|const)\s+(?:link|url|target|dest|destination|redirect|unlock_url|final_url)\w*\s*=\s*["'`](https?:\/\/[^"'`]+)["'`]/i,
+    /<a[^>]+(?:id|class)=["'][^"']*(?:link|getlink|unlock|dest|continue|go)[^"']*["'][^>]+href=["'](https?:\/\/[^"']+)["']/i,
+    /<a[^>]+href=["'](https?:\/\/[^"']+)["'][^>]+(?:id|class)=["'][^"']*(?:link|getlink|unlock|dest|continue|go)/i,
+    /data-(?:url|link|href|target|dest)=["'](https?:\/\/[^"']+)["']/i,
   ];
   for (const pat of pats) {
-    const m = r.text.match(pat);
-    if (m && m[1].startsWith("http")) return m[1];
+    const m = html.match(pat);
+    if (m && m[1]) {
+      try {
+        const u = new URL(decodeEntities(m[1]).trim());
+        if (!SKIP_HOST_RE.test(u.hostname) && !isAssetOrTrackerUrl(u) && u.href !== parsedUrl.href) {
+          return u.href;
+        }
+      } catch {}
+    }
   }
-  const dest = guessDestination(r.text, parsedUrl.href);
+
+  // Cek base64 (atob / b64 string panjang)
+  for (const m of html.matchAll(/atob\s*\(\s*["']([A-Za-z0-9+/=_-]{16,})["']\s*\)/g)) {
+    const dec = decodeB64(m[1]).trim();
+    if (/^https?:\/\//i.test(dec)) {
+      try {
+        const u = new URL(dec);
+        if (!SKIP_HOST_RE.test(u.hostname) && !isAssetOrTrackerUrl(u)) return u.href;
+      } catch {}
+    }
+  }
+
+  // Cek endpoint unlock umum jika ada slug/id
+  const slug = parsedUrl.pathname.replace(/^\/+|\/+$/g, "").split("/").pop() || "";
+  if (slug) {
+    for (const ep of ["/unlock", "/api/unlock", "/get-link", "/go"]) {
+      try {
+        const resPost = await s.postJson(`https://${parsedUrl.hostname}${ep}`, { slug, id: slug, code: slug });
+        const fromJson = guessDestination(resPost.text, parsedUrl.href);
+        if (fromJson) return fromJson;
+      } catch {}
+    }
+  }
+
+  const dest = guessDestination(html, parsedUrl.href);
   if (dest) return dest;
-  throw new Error("sub4unlock: URL tujuan tidak ditemukan.");
+  throw new Error("sub4unlock: halaman membutuhkan interaksi/captcha di browser atau URL tujuan tidak ter-embed di HTML awal.");
 }
 
 async function bypassGenericSocial(parsedUrl, trace) {
