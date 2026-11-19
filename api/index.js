@@ -2,15 +2,18 @@
 
 const mgvt = require("./mgvt");
 const umpc = require("./umpc");
+const lv = require("./lv");
 
 const ENGINES = {
   mgvt: { run: (u, o) => mgvt.bypass(u, o) },
   umpc: { run: (u, o) => umpc.bypass(u, o) },
+  lv: { run: (u, o) => lv.bypass(u, o) },
 };
 
 const HOSTS = [
   { test: /(^|\.)(sfl\.gl|(khadd?avi)\.(com|net))$/i, engine: "mgvt" },
   { test: /(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net)$/i, engine: "umpc" },
+  { test: /(^|\.)(linkvertise\.(com|net|download)|link-to\.net|file-link\.net|direct-link\.net)$/i, engine: "lv" },
 ];
 
 function pickEngine(url) {
@@ -36,7 +39,7 @@ async function resolveRequest(req) {
       payload: {
         status: false,
         error: "Parameter url wajib diisi.",
-        engines: ["mgvt", "umpc"],
+        engines: ["mgvt", "umpc", "lv"],
       },
     };
   }
