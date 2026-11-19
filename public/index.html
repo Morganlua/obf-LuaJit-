@@ -523,7 +523,7 @@
       <div class="loader-track">
         <div class="loader-fill" id="splashBar"></div>
       </div>
-      <div class="loader-caption" id="splashCaption">Menyiapkan modul Safelinku &amp; BicoLink...</div>
+      <div class="loader-caption" id="splashCaption">Menyiapkan modul Safelinku, BicoLink &amp; Linkvertise...</div>
     </div>
   </div>
 
@@ -534,7 +534,7 @@
       Noxis<br />
       <span class="title-accent">Bypass Link</span>
     </h1>
-    <p class="sub-caption">auto detect sfl.gl &amp; bicolink / bicosafe • cepat &amp; langsung</p>
+    <p class="sub-caption">auto detect sfl.gl / khaddavi, bicolink &amp; linkvertise • cepat &amp; langsung</p>
 
     <main class="main-box">
       <div class="engine-strip">
@@ -579,7 +579,7 @@
               <span class="state-pill" id="stateBadge">IDLE</span>
             </div>
           </div>
-          <div class="logs-console" id="logsConsole">Menunggu input URL Safelinku (sfl.gl / khaddavi) atau BicoLink / BicoSafe...</div>
+          <div class="logs-console" id="logsConsole">Menunggu input URL Safelinku (sfl.gl / khaddavi), BicoLink, atau Linkvertise...</div>
         </div>
 
         <div class="result-card" id="resultCard">
@@ -656,6 +656,11 @@
           badge.classList.add("bico");
           return "umpc";
         }
+        if (/(^|\.)(linkvertise\.(com|net|download)|link-to\.net|file-link\.net|direct-link\.net)$/.test(host)) {
+          badge.textContent = "Linkvertise (lv)";
+          badge.classList.add("bico");
+          return "lv";
+        }
         badge.textContent = "Host Tidak Dikenal";
         return null;
       } catch {
@@ -730,7 +735,7 @@
         stateBadge.textContent = "ERROR";
         stateBadge.style.color = "#ff3d00";
         logsConsole.textContent = `[${timeNow}] Domain tidak didukung.
-Hanya mendukung Safelinku (sfl.gl / khaddavi) dan BicoLink / BicoSafe.`;
+Hanya mendukung Safelinku (sfl.gl / khaddavi), BicoLink / BicoSafe, dan Linkvertise.`;
         return;
       }
 
