@@ -33,7 +33,6 @@
       padding: 0;
     }
 
-    /* Animasi Loading Awal Saat Buka Web */
     #splash-loader {
       position: fixed;
       inset: 0;
@@ -361,7 +360,6 @@
       cursor: not-allowed;
     }
 
-    /* Kolom Logs & Hasil URL (Selalu Terlihat Langsung) */
     .logs-section {
       display: flex;
       flex-direction: column;
@@ -536,7 +534,7 @@
       Noxis<br />
       <span class="title-accent">Bypass Link</span>
     </h1>
-    <p class="sub-caption">auto detect sfl.gl &amp; bicolink • cepat &amp; langsung</p>
+    <p class="sub-caption">auto detect sfl.gl &amp; bicolink / bicosafe • cepat &amp; langsung</p>
 
     <main class="main-box">
       <div class="engine-strip">
@@ -571,7 +569,7 @@
         </form>
       </div>
 
-      <!-- Kolom Logs (MS & Status) + Kolom Hasil URL (Langsung Ada) -->
+      <!-- Kolom Logs (MS Berjalan Real-time & Status) + Kolom Hasil URL -->
       <div class="logs-section">
         <div class="logs-card">
           <div class="logs-header">
@@ -581,7 +579,7 @@
               <span class="state-pill" id="stateBadge">IDLE</span>
             </div>
           </div>
-          <div class="logs-console" id="logsConsole">Menunggu input URL Safelinku (sfl.gl) atau BicoLink...</div>
+          <div class="logs-console" id="logsConsole">Menunggu input URL Safelinku (sfl.gl) atau BicoLink / BicoSafe...</div>
         </div>
 
         <div class="result-card" id="resultCard">
@@ -648,13 +646,13 @@
         const normalized = /^https?:\/\//i.test(raw) ? raw : "https://" + raw;
         const host = new URL(normalized).hostname.toLowerCase();
 
-        if (/(^|\.)sfl\.gl$/.test(host)) {
+        if (/(^|\.)(sfl\.gl|khadavi\.com|khadavi\.net)$/.test(host)) {
           badge.textContent = "Safelinku (mgvt)";
           badge.classList.add("sfl");
           return "mgvt";
         }
-        if (/(^|\.)(bicolink\.com|bico\.link)$/.test(host)) {
-          badge.textContent = "BicoLink (umpc)";
+        if (/(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net)$/.test(host)) {
+          badge.textContent = "Bico Engine (umpc)";
           badge.classList.add("bico");
           return "umpc";
         }
@@ -677,6 +675,27 @@
     const resultUrlText = document.getElementById("resultUrlText");
     const btnCopyUrl = document.getElementById("btnCopyUrl");
     const btnOpenUrl = document.getElementById("btnOpenUrl");
+
+    let msTicker = null;
+
+    function startMsCounter(t0) {
+      stopMsCounter();
+      msBadge.textContent = "0 MS";
+      msTicker = setInterval(() => {
+        const currentMs = Math.round(performance.now() - t0);
+        msBadge.textContent = `${currentMs} MS`;
+      }, 45);
+    }
+
+    function stopMsCounter(finalMs) {
+      if (msTicker) {
+        clearInterval(msTicker);
+        msTicker = null;
+      }
+      if (typeof finalMs === "number") {
+        msBadge.textContent = `${finalMs} MS`;
+      }
+    }
 
     btnPaste.addEventListener("click", async () => {
       try {
@@ -707,17 +726,16 @@
       btnOpenUrl.classList.add("disabled-link");
 
       if (!engine) {
-        msBadge.textContent = "0 MS";
+        stopMsCounter(0);
         stateBadge.textContent = "ERROR";
         stateBadge.style.color = "#ff3d00";
         logsConsole.textContent = `[${timeNow}] Domain tidak didukung.
-Hanya mendukung Safelinku (sfl.gl) dan BicoLink (bicolink.com / bico.link).`;
+Hanya mendukung Safelinku (sfl.gl) dan BicoLink / BicoSafe.`;
         return;
       }
 
       btnGass.disabled = true;
       btnGass.innerHTML = "<span>PROSES...</span>";
-      msBadge.textContent = "... MS";
       stateBadge.textContent = "RUNNING";
       stateBadge.style.color = "#ffd000";
       logsConsole.textContent = `[${timeNow}] Memulai bypass...
@@ -725,11 +743,13 @@ Target : ${targetUrl}
 Engine : ${engine}`;
 
       const t0 = performance.now();
+      startMsCounter(t0);
+
       try {
         const res = await fetch(`/api/${engine}?url=${encodeURIComponent(targetUrl)}`);
         const data = await res.json();
         const elapsed = typeof data.execution_time_ms === "number" ? data.execution_time_ms : Math.round(performance.now() - t0);
-        msBadge.textContent = `${elapsed} MS`;
+        stopMsCounter(elapsed);
 
         if (data.status && data.data && data.data.bypassed_url) {
           const finalUrl = data.data.bypassed_url;
@@ -754,7 +774,7 @@ Error: ${data.error || "Terjadi kesalahan pada server."}`;
         }
       } catch (err) {
         const elapsed = Math.round(performance.now() - t0);
-        msBadge.textContent = `${elapsed} MS`;
+        stopMsCounter(elapsed);
         stateBadge.textContent = "ERROR";
         stateBadge.style.color = "#ff3d00";
         logsConsole.textContent += `
