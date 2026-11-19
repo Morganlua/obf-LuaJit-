@@ -3,23 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NoxisLua Bypasser</title>
+  <title>Noxis Bypass Link</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #fdfbf7;
+      --bg-grid: #f8f7f3;
+      --grid-line: rgba(17, 17, 17, 0.08);
       --surface: #ffffff;
-      --orange: #ff4500;
-      --orange-hover: #e03d00;
-      --yellow: #ffcc00;
-      --green: #00e676;
-      --blue: #00b0ff;
-      --red: #ff3d00;
       --ink: #111111;
-      --border: 4px solid #111111;
-      --shadow: 6px 6px 0px #111111;
+      --muted: #525252;
+      --yellow: #ffd000;
+      --yellow-dark: #f2c300;
+      --orange: #ff5500;
+      --orange-dark: #e24900;
+      --cyan: #00d2ff;
+      --lime: #9eff00;
+      --green: #00e676;
+      --red: #ff3d00;
+      --border: 2.5px solid #111111;
+      --shadow: 5px 5px 0px #111111;
       --shadow-sm: 3px 3px 0px #111111;
     }
 
@@ -29,680 +33,748 @@
       padding: 0;
     }
 
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    /* Animasi Loading Awal Saat Buka Web */
+    #splash-loader {
+      position: fixed;
+      inset: 0;
+      background-color: var(--bg-grid);
+      background-image:
+        linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+      background-size: 24px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
     }
 
-    @keyframes pulseBadge {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
+    #splash-loader.done {
+      opacity: 0;
+      visibility: hidden;
     }
 
-    @keyframes spinIndicator {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    body {
-      background-color: var(--bg);
-      background-image: radial-gradient(#111111 1.2px, transparent 1.2px);
-      background-size: 28px 28px;
-      color: var(--ink);
-      font-family: 'Space Grotesk', sans-serif;
-      min-height: 100vh;
+    .loader-card {
+      width: min(350px, 90vw);
+      background: var(--surface);
+      border: var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 22px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      animation: fadeInUp 0.6s ease-out;
+      gap: 12px;
+      animation: popIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1);
     }
 
-    header {
-      background: var(--orange);
-      border-bottom: var(--border);
-      padding: 24px 32px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      box-shadow: 0 4px 0px #111111;
-      animation: fadeInUp 0.4s ease-out;
-    }
-
-    .brand {
+    .loader-top {
       display: flex;
       align-items: center;
-      gap: 14px;
+      justify-content: space-between;
     }
 
-    .brand-badge {
+    .loader-badge {
       background: var(--yellow);
-      border: var(--border);
-      box-shadow: var(--shadow-sm);
-      padding: 8px 16px;
+      border: 2px solid var(--ink);
+      border-radius: 6px;
+      padding: 2px 8px;
       font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
       font-weight: 800;
-      font-size: 1rem;
-      letter-spacing: 0.5px;
-      animation: pulseBadge 3s infinite ease-in-out;
+      box-shadow: 2px 2px 0px var(--ink);
     }
 
-    .brand-title {
-      font-size: 2rem;
-      font-weight: 800;
-      color: #ffffff;
-      text-shadow: 3px 3px 0px #111111;
-      text-transform: uppercase;
-      letter-spacing: -0.5px;
-    }
-
-    .support-pills {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .pill {
-      background: var(--yellow);
-      border: var(--border);
-      box-shadow: var(--shadow-sm);
-      padding: 6px 14px;
+    .loader-pct {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.85rem;
       font-weight: 800;
-      text-transform: uppercase;
-      transition: transform 0.2s ease;
     }
 
-    .pill:hover {
-      transform: translateY(-2px);
+    .loader-heading {
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
     }
 
-    main {
+    .loader-track {
       width: 100%;
-      max-width: 820px;
-      margin: 40px auto;
-      padding: 0 20px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 32px;
-    }
-
-    .card {
-      background: var(--surface);
-      border: var(--border);
-      box-shadow: var(--shadow);
-      padding: 34px;
-      border-radius: 6px;
-      animation: fadeInUp 0.6s ease-out;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .card:hover {
-      transform: translate(-2px, -2px);
-      box-shadow: 8px 8px 0px #111111;
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 14px;
-      border-bottom: 3px solid #111111;
-    }
-
-    .card-title {
-      font-size: 1.3rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: -0.3px;
-    }
-
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .input-label {
-      font-weight: 800;
-      font-size: 0.95rem;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-
-    .neo-input {
-      width: 100%;
-      height: 60px;
-      padding: 0 20px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1rem;
-      font-weight: 700;
-      background: var(--bg);
-      border: var(--border);
-      color: var(--ink);
-      outline: none;
-      box-shadow: var(--shadow-sm);
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .neo-input:focus {
-      background: #ffffff;
-      transform: translate(-3px, -3px);
-      box-shadow: 6px 6px 0px #111111;
-    }
-
-    .engine-row {
-      margin-top: 18px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      background: var(--bg);
-      border: var(--border);
-      padding: 16px 20px;
-      box-shadow: var(--shadow-sm);
-      transition: background 0.3s ease;
-    }
-
-    .engine-label {
-      font-weight: 800;
-      font-size: 0.95rem;
-    }
-
-    .engine-value {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 800;
-      font-size: 0.95rem;
-      padding: 8px 16px;
-      border: var(--border);
-      background: var(--surface);
-      box-shadow: 2px 2px 0px #111111;
-      transition: all 0.3s ease;
-    }
-
-    .engine-value.detected-sfl {
-      background: var(--orange);
-      color: #ffffff;
-    }
-
-    .engine-value.detected-bico {
-      background: var(--blue);
-      color: #111111;
-    }
-
-    .btn-bypass {
-      margin-top: 24px;
-      width: 100%;
-      height: 62px;
-      background: var(--orange);
-      color: #ffffff;
-      border: var(--border);
-      box-shadow: var(--shadow);
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.25rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-      position: relative;
+      height: 15px;
+      background: #eceae3;
+      border: 2px solid var(--ink);
+      border-radius: 8px;
       overflow: hidden;
-      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     }
 
-    .btn-bypass:hover:not(:disabled) {
-      background: var(--orange-hover);
-      transform: translate(-3px, -3px);
-      box-shadow: 9px 9px 0px #111111;
+    .loader-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--orange), var(--yellow));
+      transition: width 0.1s linear;
     }
 
-    .btn-bypass:active:not(:disabled) {
-      transform: translate(2px, 2px);
-      box-shadow: 2px 2px 0px #111111;
-    }
-
-    .btn-bypass:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-      background: #888888;
-    }
-
-    .logs-box {
-      background: #141414;
-      color: #f8f8f2;
-      border: var(--border);
-      box-shadow: var(--shadow);
-      padding: 22px;
+    .loader-caption {
       font-family: 'JetBrains Mono', monospace;
-      border-radius: 4px;
-      animation: fadeInUp 0.5s ease-out;
+      font-size: 0.73rem;
+      color: var(--muted);
     }
 
-    .logs-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid #333333;
-      padding-bottom: 12px;
-      margin-bottom: 16px;
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
-    .logs-heading {
-      font-weight: 800;
-      font-size: 0.95rem;
-      color: var(--yellow);
-      text-transform: uppercase;
-    }
-
-    .ms-badge {
-      background: var(--yellow);
-      color: #111111;
-      padding: 4px 12px;
-      font-weight: 800;
-      font-size: 0.9rem;
-      border: 2px solid #ffffff;
-    }
-
-    .log-steps {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      font-size: 0.95rem;
-    }
-
-    .log-steps li {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: #666666;
-      transition: color 0.3s ease, transform 0.2s ease;
-    }
-
-    .log-steps li.active {
-      color: var(--yellow);
-      font-weight: 700;
-      transform: translateX(6px);
-    }
-
-    .log-steps li.done {
-      color: var(--green);
-      font-weight: 700;
-      transform: translateX(6px);
-    }
-
-    .log-steps li.error {
-      color: var(--red);
-      font-weight: 700;
-      transform: translateX(6px);
-    }
-
-    .result-section {
-      margin-top: 26px;
-      padding-top: 22px;
-      border-top: 3px dashed #111111;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      animation: fadeInUp 0.5s ease-out;
-    }
-
-    .result-row {
-      display: flex;
-      gap: 12px;
-    }
-
-    .result-input {
-      flex: 1;
-      height: 56px;
-      padding: 0 18px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.95rem;
-      font-weight: 700;
-      background: #eafff3;
-      border: var(--border);
-      color: #111111;
-      outline: none;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .btn-copy {
-      height: 56px;
-      padding: 0 24px;
-      background: var(--yellow);
-      border: var(--border);
-      box-shadow: var(--shadow-sm);
+    body {
+      min-height: 100vh;
+      background-color: var(--bg-grid);
+      background-image:
+        linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: var(--ink);
       font-family: 'Space Grotesk', sans-serif;
-      font-weight: 800;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: transform 0.15s ease, background 0.15s ease;
+      padding: 28px 16px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
-    .btn-copy:hover {
-      background: #ffd500;
-      transform: translate(-2px, -2px);
-      box-shadow: 5px 5px 0px #111111;
+    .wrap {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      animation: popIn 0.45s ease-out;
     }
 
-    .btn-open-url {
+    .kicker-pill {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 58px;
-      background: var(--green);
-      color: #111111;
-      border: var(--border);
-      box-shadow: var(--shadow);
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.1rem;
+      width: fit-content;
+      background: var(--yellow);
+      border: 2px solid var(--ink);
+      border-radius: 6px;
+      padding: 3px 10px;
+      box-shadow: 2px 2px 0px var(--ink);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
       font-weight: 800;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
-      text-decoration: none;
+    }
+
+    .title-block {
+      font-size: clamp(2.2rem, 5vw, 3.1rem);
+      font-weight: 800;
+      line-height: 1.06;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+    }
+
+    .title-accent {
+      display: inline-block;
+      background: var(--orange);
+      color: #ffffff;
+      border: 2.5px solid var(--ink);
+      border-radius: 8px;
+      padding: 2px 14px 5px;
+      margin-top: 4px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .sub-caption {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .main-box {
+      margin-top: 8px;
+      background: var(--surface);
+      border: var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .engine-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #faf9f6;
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+
+    .engine-strip-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .engine-badge {
+      background: #141414;
+      color: var(--lime);
+      border: 2px solid var(--ink);
+      border-radius: 7px;
+      padding: 4px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 800;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .engine-badge.sfl {
+      background: var(--orange);
+      color: #ffffff;
+    }
+
+    .engine-badge.bico {
+      background: var(--cyan);
+      color: var(--ink);
+    }
+
+    .field-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .field-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .field-tag {
+      background: #fff3c4;
+      border: 2px solid var(--ink);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 800;
+    }
+
+    .input-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 2.2px solid var(--ink);
+      border-radius: 11px;
+      padding: 6px 6px 6px 14px;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
-    .btn-open-url:hover {
-      transform: translate(-3px, -3px);
-      box-shadow: 9px 9px 0px #111111;
+    .input-box:focus-within {
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0px var(--ink);
     }
 
-    .btn-open-url.disabled {
-      background: #e0e0e0;
-      color: #777777;
-      pointer-events: none;
-      box-shadow: none;
-    }
-
-    .error-alert {
-      background: var(--red);
-      color: #ffffff;
-      border: var(--border);
-      box-shadow: var(--shadow-sm);
-      padding: 14px 18px;
+    .url-field {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      outline: none;
+      background: transparent;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       font-weight: 700;
-      display: none;
-      animation: fadeInUp 0.3s ease-out;
+      color: var(--ink);
+      padding: 8px 4px;
     }
 
-    footer {
-      background: var(--surface);
-      border-top: var(--border);
-      padding: 26px;
-      text-align: center;
-      box-shadow: 0 -4px 0px #111111;
-      animation: fadeInUp 0.6s ease-out;
+    .url-field::placeholder {
+      color: #8c8c8c;
     }
 
-    .footer-main {
-      font-size: 1.05rem;
+    .paste-btn {
+      background: var(--yellow);
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
       font-weight: 800;
       color: var(--ink);
+      cursor: pointer;
+      box-shadow: 2px 2px 0px var(--ink);
+      transition: transform 0.1s ease, background-color 0.1s ease;
     }
 
-    .footer-sub {
-      margin-top: 8px;
+    .paste-btn:hover {
+      background: var(--yellow-dark);
+      transform: translate(-1px, -1px);
+    }
+
+    .gass-btn {
+      margin-top: 12px;
+      width: 100%;
+      height: 50px;
+      background: var(--orange);
+      color: #ffffff;
+      border: 2.5px solid var(--ink);
+      border-radius: 11px;
+      box-shadow: var(--shadow-sm);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+    }
+
+    .gass-btn:hover:not(:disabled) {
+      background: var(--orange-dark);
+      transform: translate(-2px, -2px);
+      box-shadow: 5px 5px 0px var(--ink);
+    }
+
+    .gass-btn:active:not(:disabled) {
+      transform: translate(1px, 1px);
+      box-shadow: 2px 2px 0px var(--ink);
+    }
+
+    .gass-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    /* Kolom Logs & Hasil URL (Selalu Terlihat Langsung) */
+    .logs-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 4px;
+    }
+
+    .logs-card {
+      background: #141414;
+      color: #f5f5f5;
+      border: 2.5px solid var(--ink);
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.88rem;
+    }
+
+    .logs-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+      border-bottom: 1.5px dashed #383838;
+    }
+
+    .logs-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--yellow);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .logs-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ms-pill {
+      background: #232323;
+      color: var(--cyan);
+      border: 1.5px solid #444444;
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .state-pill {
+      background: #232323;
+      color: var(--lime);
+      border: 1.5px solid #444444;
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .logs-console {
+      font-size: 0.8rem;
+      line-height: 1.55;
+      color: #dcdcdc;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .result-card {
+      display: flex;
+      background: #faf9f6;
+      color: var(--ink);
+      border: 2.5px solid var(--ink);
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+      flex-direction: column;
+      gap: 10px;
+      transition: background-color 0.2s ease;
+    }
+
+    .result-card.ready {
+      background: var(--green);
+    }
+
+    .result-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .result-url-box {
+      background: #ffffff;
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.84rem;
+      font-weight: 800;
+      color: var(--ink);
+      word-break: break-all;
+    }
+
+    .result-url-box.empty {
+      color: #7a7a7a;
       font-weight: 700;
-      color: var(--orange);
+    }
+
+    .result-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .act-btn {
+      background: var(--yellow);
+      color: var(--ink);
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      box-shadow: 2px 2px 0px var(--ink);
+    }
+
+    .act-btn.open {
+      background: var(--cyan);
+    }
+
+    .act-btn.disabled-link {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .bottom-mark {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      color: var(--muted);
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <div class="brand">
-      <div class="brand-badge">NOXIS</div>
-      <div class="brand-title">NoxisLua Bypasser</div>
+  <!-- Loading Awal Saat Buka Web -->
+  <div id="splash-loader">
+    <div class="loader-card">
+      <div class="loader-top">
+        <span class="loader-badge">NOXIS</span>
+        <span class="loader-pct" id="splashPct">0%</span>
+      </div>
+      <div class="loader-heading">Noxis Bypass Link...</div>
+      <div class="loader-track">
+        <div class="loader-fill" id="splashBar"></div>
+      </div>
+      <div class="loader-caption" id="splashCaption">Menyiapkan modul Safelinku &amp; BicoLink...</div>
     </div>
-    <div class="support-pills">
-      <span class="pill">Safelinku</span>
-      <span class="pill">BicoLink</span>
-    </div>
-  </header>
+  </div>
 
-  <main>
-    <section class="card">
-      <div class="card-header">
-        <span class="card-title">Input Target Link</span>
-        <span class="pill" style="background:#fff;">AUTO DETECT</span>
+  <div class="wrap">
+    <div class="kicker-pill">NOXIS</div>
+
+    <h1 class="title-block">
+      Noxis<br />
+      <span class="title-accent">Bypass Link</span>
+    </h1>
+    <p class="sub-caption">auto detect sfl.gl &amp; bicolink • cepat &amp; langsung</p>
+
+    <main class="main-box">
+      <div class="engine-strip">
+        <span class="engine-strip-title">ENGINE:</span>
+        <span class="engine-badge" id="engineStatus">Auto-Detect</span>
       </div>
 
-      <div class="input-group">
-        <label class="input-label" for="inputLink">URL Shortlink</label>
-        <input
-          type="url"
-          id="inputLink"
-          class="neo-input"
-          placeholder="https://sfl.gl/... atau https://bicolink.com/..."
-          autocomplete="off"
-          oninput="detectEngine()"
-        />
-      </div>
-
-      <div class="engine-row">
-        <span class="engine-label">Engine Terdeteksi:</span>
-        <span class="engine-value" id="engineDetected">Menunggu input link...</span>
-      </div>
-
-      <button class="btn-bypass" id="btnBypass" onclick="startBypass()">Mulai Bypass</button>
-    </section>
-
-    <section class="card">
-      <div class="card-header">
-        <span class="card-title">Proses & Hasil</span>
-      </div>
-
-      <div class="logs-box">
-        <div class="logs-top">
-          <span class="logs-heading">Status Sistem</span>
-          <span class="ms-badge" id="msCounter">0 MS</span>
+      <div>
+        <div class="field-header">
+          <span class="field-label">PASTE LENK NYA</span>
+          <span class="field-tag">URL..</span>
         </div>
 
-        <ul class="log-steps" id="logSteps">
-          <li id="step1">• mengambil url target</li>
-          <li id="step2">• menjalankan engine bypass</li>
-          <li id="step3">• memproses dekripsi link</li>
-          <li id="step4">• berhasil mendapatkan tujuan</li>
-        </ul>
+        <form id="formBypass">
+          <div class="input-box">
+            <input
+              type="url"
+              id="linkInput"
+              class="url-field"
+              placeholder="url.."
+              required
+              autocomplete="off"
+              oninput="detectHost()"
+            />
+            <button type="button" class="paste-btn" id="btnPaste">PASTE</button>
+          </div>
+
+          <button type="submit" class="gass-btn" id="btnGass">
+            <span>GASS</span>
+            <span>&darr;</span>
+          </button>
+        </form>
       </div>
 
-      <div class="error-alert" id="errorBox" style="margin-top: 18px;"></div>
-
-      <div class="result-section">
-        <label class="input-label" for="targetUrlOutput">URL Tujuan Akhir</label>
-        <div class="result-row">
-          <input
-            type="text"
-            id="targetUrlOutput"
-            class="result-input"
-            readonly
-            placeholder="URL hasil bypass akan muncul di sini..."
-          />
-          <button class="btn-copy" onclick="copyResult()">Salin</button>
+      <!-- Kolom Logs (MS & Status) + Kolom Hasil URL (Langsung Ada) -->
+      <div class="logs-section">
+        <div class="logs-card">
+          <div class="logs-header">
+            <span class="logs-title">LOGS</span>
+            <div class="logs-meta">
+              <span class="ms-pill" id="msBadge">0 MS</span>
+              <span class="state-pill" id="stateBadge">IDLE</span>
+            </div>
+          </div>
+          <div class="logs-console" id="logsConsole">Menunggu input URL Safelinku (sfl.gl) atau BicoLink...</div>
         </div>
 
-        <a
-          href="#"
-          target="_blank"
-          rel="noopener noreferrer"
-          id="btnGoUrl"
-          class="btn-open-url disabled"
-        >
-          Buka URL Tujuan
-        </a>
+        <div class="result-card" id="resultCard">
+          <span class="result-label">HASIL URL</span>
+          <div class="result-url-box empty" id="resultUrlText">-</div>
+          <div class="result-actions">
+            <button type="button" class="act-btn" id="btnCopyUrl">SALIN URL</button>
+            <a href="#" target="_blank" rel="noopener noreferrer" class="act-btn open disabled-link" id="btnOpenUrl">BUKA URL</a>
+          </div>
+        </div>
       </div>
-    </section>
-  </main>
+    </main>
 
-  <footer>
-    <div class="footer-main">Website ini dibuat oleh King Noxis Lua yang ganteng</div>
-    <div class="footer-sub">NoxisLua Bypasser Engine v2.3</div>
-  </footer>
+    <div class="bottom-mark">Noxis Bypass Link</div>
+  </div>
 
   <script>
-    let msInterval = null;
-    let startTimestamp = 0;
+    // Animasi loading awal saat buka web
+    window.addEventListener("DOMContentLoaded", () => {
+      const loader = document.getElementById("splash-loader");
+      const bar = document.getElementById("splashBar");
+      const pct = document.getElementById("splashPct");
+      const caption = document.getElementById("splashCaption");
 
-    function detectEngine() {
-      const val = document.getElementById("inputLink").value.trim();
-      const badge = document.getElementById("engineDetected");
+      const notes = [
+        "Menyiapkan modul Safelinku & BicoLink...",
+        "Memuat antarmuka Noxis Bypass Link...",
+        "Mengaktifkan deteksi otomatis host...",
+        "Siap digunakan."
+      ];
 
-      badge.className = "engine-value";
-      if (!val) {
-        badge.textContent = "Menunggu input link...";
+      let val = 0;
+      const timer = setInterval(() => {
+        val += Math.floor(Math.random() * 18) + 10;
+        if (val >= 100) {
+          val = 100;
+          clearInterval(timer);
+          bar.style.width = "100%";
+          pct.textContent = "100%";
+          caption.textContent = notes[notes.length - 1];
+          setTimeout(() => {
+            loader.classList.add("done");
+          }, 240);
+        } else {
+          bar.style.width = val + "%";
+          pct.textContent = val + "%";
+          const idx = Math.min(notes.length - 1, Math.floor((val / 100) * notes.length));
+          caption.textContent = notes[idx];
+        }
+      }, 50);
+    });
+
+    function detectHost() {
+      const raw = document.getElementById("linkInput").value.trim();
+      const badge = document.getElementById("engineStatus");
+      badge.className = "engine-badge";
+
+      if (!raw) {
+        badge.textContent = "Auto-Detect";
         return null;
       }
 
       try {
-        const normalized = /^https?:\/\//i.test(val) ? val : "https://" + val;
+        const normalized = /^https?:\/\//i.test(raw) ? raw : "https://" + raw;
         const host = new URL(normalized).hostname.toLowerCase();
 
         if (/(^|\.)sfl\.gl$/.test(host)) {
-          badge.textContent = "Safelinku Engine (mgvt)";
-          badge.classList.add("detected-sfl");
+          badge.textContent = "Safelinku (mgvt)";
+          badge.classList.add("sfl");
           return "mgvt";
         }
         if (/(^|\.)(bicolink\.com|bico\.link)$/.test(host)) {
-          badge.textContent = "BicoLink Engine (umpc)";
-          badge.classList.add("detected-bico");
+          badge.textContent = "BicoLink (umpc)";
+          badge.classList.add("bico");
           return "umpc";
         }
-        badge.textContent = "Host tidak didukung (Gunakan sfl.gl / bicolink)";
+        badge.textContent = "Host Tidak Dikenal";
         return null;
       } catch {
-        badge.textContent = "Format URL tidak valid";
+        badge.textContent = "URL Tidak Valid";
         return null;
       }
     }
 
-    function resetLogs() {
-      ["step1", "step2", "step3", "step4"].forEach((id) => {
-        const el = document.getElementById(id);
-        el.className = "";
-      });
-      document.getElementById("errorBox").style.display = "none";
-      document.getElementById("targetUrlOutput").value = "";
-      const goBtn = document.getElementById("btnGoUrl");
-      goBtn.href = "#";
-      goBtn.classList.add("disabled");
-    }
+    const linkInput = document.getElementById("linkInput");
+    const btnPaste = document.getElementById("btnPaste");
+    const formBypass = document.getElementById("formBypass");
+    const btnGass = document.getElementById("btnGass");
+    const msBadge = document.getElementById("msBadge");
+    const stateBadge = document.getElementById("stateBadge");
+    const logsConsole = document.getElementById("logsConsole");
+    const resultCard = document.getElementById("resultCard");
+    const resultUrlText = document.getElementById("resultUrlText");
+    const btnCopyUrl = document.getElementById("btnCopyUrl");
+    const btnOpenUrl = document.getElementById("btnOpenUrl");
 
-    function setStepState(stepId, state) {
-      const el = document.getElementById(stepId);
-      if (el) el.className = state;
-    }
-
-    function startTimer() {
-      startTimestamp = performance.now();
-      const msEl = document.getElementById("msCounter");
-      msInterval = setInterval(() => {
-        const diff = Math.round(performance.now() - startTimestamp);
-        msEl.textContent = `${diff} MS`;
-      }, 40);
-    }
-
-    function stopTimer(finalMs) {
-      if (msInterval) clearInterval(msInterval);
-      const msEl = document.getElementById("msCounter");
-      const diff = typeof finalMs === "number" ? finalMs : Math.round(performance.now() - startTimestamp);
-      msEl.textContent = `${diff} MS`;
-    }
-
-    async function startBypass() {
-      const inputEl = document.getElementById("inputLink");
-      const rawUrl = inputEl.value.trim();
-      const btn = document.getElementById("btnBypass");
-      const errorBox = document.getElementById("errorBox");
-
-      if (!rawUrl) {
-        errorBox.textContent = "Masukkan link sfl.gl atau bicolink terlebih dahulu!";
-        errorBox.style.display = "block";
-        return;
+    btnPaste.addEventListener("click", async () => {
+      try {
+        const txt = await navigator.clipboard.readText();
+        if (txt) {
+          linkInput.value = txt.trim();
+          detectHost();
+          linkInput.focus();
+        }
+      } catch {
+        linkInput.focus();
       }
+    });
 
-      const targetUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : "https://" + rawUrl;
-      const engine = detectEngine();
+    formBypass.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const raw = linkInput.value.trim();
+      if (!raw) return;
+
+      const targetUrl = /^https?:\/\//i.test(raw) ? raw : "https://" + raw;
+      const engine = detectHost();
+      const timeNow = new Date().toLocaleTimeString();
+
+      resultCard.classList.remove("ready");
+      resultUrlText.textContent = "-";
+      resultUrlText.classList.add("empty");
+      btnOpenUrl.href = "#";
+      btnOpenUrl.classList.add("disabled-link");
 
       if (!engine) {
-        errorBox.textContent = "Engine untuk link tersebut tidak dikenali atau belum didukung.";
-        errorBox.style.display = "block";
+        msBadge.textContent = "0 MS";
+        stateBadge.textContent = "ERROR";
+        stateBadge.style.color = "#ff3d00";
+        logsConsole.textContent = `[${timeNow}] Domain tidak didukung.
+Hanya mendukung Safelinku (sfl.gl) dan BicoLink (bicolink.com / bico.link).`;
         return;
       }
 
-      resetLogs();
-      btn.disabled = true;
-      btn.textContent = "Memproses...";
-      startTimer();
+      btnGass.disabled = true;
+      btnGass.innerHTML = "<span>PROSES...</span>";
+      msBadge.textContent = "... MS";
+      stateBadge.textContent = "RUNNING";
+      stateBadge.style.color = "#ffd000";
+      logsConsole.textContent = `[${timeNow}] Memulai bypass...
+Target : ${targetUrl}
+Engine : ${engine}`;
 
-      setStepState("step1", "active");
-      await new Promise((r) => setTimeout(r, 200));
-      setStepState("step1", "done");
-
-      setStepState("step2", "active");
-      const step3Timer = setTimeout(() => {
-        setStepState("step2", "done");
-        setStepState("step3", "active");
-      }, 2500);
-
+      const t0 = performance.now();
       try {
-        const endpoint = `/api/${engine}?url=${encodeURIComponent(targetUrl)}`;
-        const res = await fetch(endpoint);
+        const res = await fetch(`/api/${engine}?url=${encodeURIComponent(targetUrl)}`);
         const data = await res.json();
-        clearTimeout(step3Timer);
+        const elapsed = typeof data.execution_time_ms === "number" ? data.execution_time_ms : Math.round(performance.now() - t0);
+        msBadge.textContent = `${elapsed} MS`;
 
         if (data.status && data.data && data.data.bypassed_url) {
-          setStepState("step2", "done");
-          setStepState("step3", "done");
-          setStepState("step4", "done");
-          stopTimer(data.execution_time_ms);
+          const finalUrl = data.data.bypassed_url;
+          stateBadge.textContent = "SUCCESS";
+          stateBadge.style.color = "#00e676";
+          logsConsole.textContent += `
+[${new Date().toLocaleTimeString()}] Selesai dalam ${elapsed} ms.
+Host Tujuan: ${data.data.host || "-"}
+Status: Berhasil diekstrak.`;
 
-          const finalLink = data.data.bypassed_url;
-          document.getElementById("targetUrlOutput").value = finalLink;
-          const goBtn = document.getElementById("btnGoUrl");
-          goBtn.href = finalLink;
-          goBtn.classList.remove("disabled");
+          resultUrlText.textContent = finalUrl;
+          resultUrlText.classList.remove("empty");
+          btnOpenUrl.href = finalUrl;
+          btnOpenUrl.classList.remove("disabled-link");
+          resultCard.classList.add("ready");
         } else {
-          setStepState("step2", "error");
-          stopTimer(data.execution_time_ms);
-          errorBox.textContent = `Gagal Bypass: ${data.error || "Terjadi kesalahan pada server."}`;
-          errorBox.style.display = "block";
+          stateBadge.textContent = "FAILED";
+          stateBadge.style.color = "#ff3d00";
+          logsConsole.textContent += `
+[${new Date().toLocaleTimeString()}] Gagal (${elapsed} ms).
+Error: ${data.error || "Terjadi kesalahan pada server."}`;
         }
       } catch (err) {
-        clearTimeout(step3Timer);
-        setStepState("step2", "error");
-        stopTimer();
-        errorBox.textContent = `Error Jaringan: ${err.message}`;
-        errorBox.style.display = "block";
+        const elapsed = Math.round(performance.now() - t0);
+        msBadge.textContent = `${elapsed} MS`;
+        stateBadge.textContent = "ERROR";
+        stateBadge.style.color = "#ff3d00";
+        logsConsole.textContent += `
+[${new Date().toLocaleTimeString()}] Network Error (${elapsed} ms): ${err.message}`;
       } finally {
-        btn.disabled = false;
-        btn.textContent = "Mulai Bypass";
+        btnGass.disabled = false;
+        btnGass.innerHTML = "<span>GASS</span><span>&darr;</span>";
       }
-    }
+    });
 
-    function copyResult() {
-      const val = document.getElementById("targetUrlOutput").value;
-      if (!val) return;
-      navigator.clipboard.writeText(val);
-      const copyBtn = document.querySelector(".btn-copy");
-      const oldText = copyBtn.textContent;
-      copyBtn.textContent = "Disalin!";
-      setTimeout(() => { copyBtn.textContent = oldText; }, 1500);
-    }
+    btnCopyUrl.addEventListener("click", async () => {
+      const txt = resultUrlText.textContent.trim();
+      if (!txt || txt === "-") return;
+      try {
+        await navigator.clipboard.writeText(txt);
+        const old = btnCopyUrl.textContent;
+        btnCopyUrl.textContent = "TERSALIN";
+        setTimeout(() => (btnCopyUrl.textContent = old), 1200);
+      } catch {}
+    });
   </script>
 </body>
 </html>
