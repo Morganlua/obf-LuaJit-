@@ -4,10 +4,10 @@ const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 const SOCIAL_HOST_RE =
-  /(^|\.)(rekonise\.com|sub2unlock\.(com|net)|ytsubme\.com|sub4unlock\.(io|com)|unlocknow\.net|sub2get\.com|subfinal\.com|mboost\.me|social-unlock\.com|socialwolvez\.com|paster\.(so|gg)|cuty\.io|adfoc\.us|mendationforc\.info)$/i;
+  /(^|\.)(rekonise\.com|sub2unlock\.(com|net)|ytsubme\.com|sub4unlock\.(io|com|co|net|org|me)|unlocknow\.net|sub2get\.com|subfinal\.com|mboost\.me|social-unlock\.com|socialwolvez\.com|paster\.(so|gg)|cuty\.io|adfoc\.us|mendationforc\.info)$/i;
 
 const SKIP_HOST_RE =
-  /(^|\.)(rekonise\.com|sub2unlock\.(com|net)|ytsubme\.com|sub4unlock\.(io|com)|unlocknow\.net|sub2get\.com|subfinal\.com|mboost\.me|social-unlock\.com|socialwolvez\.com|paster\.(so|gg)|cuty\.io|adfoc\.us|mendationforc\.info|facebook\.com|twitter\.com|x\.com|youtube\.com|youtu\.be|instagram\.com|tiktok\.com|discord\.com|discord\.gg|google\.com|googleapis\.com|gstatic\.com|cloudflare\.com|jquery\.com|w3\.org)$/i;
+  /(^|\.)(rekonise\.com|sub2unlock\.(com|net)|ytsubme\.com|sub4unlock\.(io|com|co|net|org|me)|unlocknow\.net|sub2get\.com|subfinal\.com|mboost\.me|social-unlock\.com|socialwolvez\.com|paster\.(so|gg)|cuty\.io|adfoc\.us|mendationforc\.info|facebook\.com|twitter\.com|x\.com|youtube\.com|youtu\.be|instagram\.com|tiktok\.com|discord\.com|discord\.gg|google\.com|googleapis\.com|gstatic\.com|cloudflare\.com|jquery\.com|w3\.org)$/i;
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -303,7 +303,7 @@ async function bypassSocial(inputUrl) {
       bypassedUrl = await bypassSub2UnlockNet(parsed, trace);
     } else if (host === "ytsubme.com" || host.endsWith(".ytsubme.com")) {
       bypassedUrl = await bypassYtSubMe(parsed, trace);
-    } else if (host === "sub4unlock.io" || host === "sub4unlock.com" || host.endsWith(".sub4unlock.io") || host.endsWith(".sub4unlock.com")) {
+    } else if (/\.(sub4unlock\.(io|com|co|net|org|me))$/.test("." + host)) {
       bypassedUrl = await bypassSub4Unlock(parsed, trace);
     } else {
       bypassedUrl = await bypassGenericSocial(parsed, trace);
