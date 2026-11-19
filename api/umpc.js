@@ -34,8 +34,8 @@ function assertBicolink(url) {
   } catch (e) {
     throw new Error("URL tidak valid.");
   }
-  if (!/(^|\.)(bicolink\.com|bico\.link)$/i.test(host)) {
-    throw new Error(`Host ${host} bukan bicolink. Engine umpc hanya menerima bicolink.com atau bico.link.`);
+  if (!/(^|\.)(bicolink\\.com|bico\\.link|bicosafe\\.com|bicolink\\.net|bclnk\\.net|khadavi\\.com|khadavi\\.net)$/i.test(host)) {
+    throw new Error(`Host ${host} bukan bicolink. Engine umpc hanya menerima bicolink.com, bico.link, bicosafe.com, bicolink.net, bclnk.net.`);
   }
 }
 
@@ -385,6 +385,12 @@ async function perform(ctx, url, method, body, headers, timeoutMs) {
       timeoutMs
     );
   } catch (e) {
+    // Fallback otomatis jika domain redirect perantara (seperti bewbin.com) mengalami jeda sekejap
+    if (hop < 3) {
+      ctx.trace.push(`retry hop due to error: ${e.message}`);
+      await delay(1000);
+      continue;
+    }
     throw new Error(`Gagal menghubungi ${new URL(url).hostname}: ${e.message}`);
   } finally {
     clearTimeout(timer);
