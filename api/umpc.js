@@ -19,12 +19,24 @@ const DEFAULT_TIMEOUT_MS = 90000;
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function directHandler(req, res) {
-  const target = new URL(req.url, "http://x").searchParams.get("url") || "";
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
-  const result = await bypassBicolink(target, {});
-  res.statusCode = result.status ? 200 : 502;
-  res.end(JSON.stringify(result));
+  try {
+    const rawUrl = (req && req.url) || "/";
+    const target = new URL(rawUrl, "http://localhost").searchParams.get("url") || "";
+    const result = await bypassBicolink(target, {});
+    res.statusCode = result.status ? 200 : 502;
+    res.end(JSON.stringify(result));
+  } catch (err) {
+    res.statusCode = 502;
+    res.end(JSON.stringify({
+      status: false,
+      author_skrep: CREDIT.author_skrep,
+      source: "bicolink",
+      data: null,
+      error: (err && err.message) || "Gagal memproses request BicoLink."
+    }));
+  }
 }
 
 function assertBicolink(url) {
@@ -34,7 +46,7 @@ function assertBicolink(url) {
   } catch (e) {
     throw new Error("URL tidak valid.");
   }
-  if (!/(^|\.)(bicolink\\.com|bico\\.link|bicosafe\\.com|bicolink\\.net|bclnk\\.net|khadavi\\.com|khadavi\\.net)$/i.test(host)) {
+  if (!/(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net)$/i.test(host)) {
     throw new Error(`Host ${host} bukan bicolink. Engine umpc hanya menerima bicolink.com, bico.link, bicosafe.com, bicolink.net, bclnk.net.`);
   }
 }
@@ -548,8 +560,12 @@ async function bypassBicolink(url, options = {}) {
 
     if (ctx.transport === "python") {
       const bin = findPython();
-      if (!bin) throw new Error("python3 tidak ditemukan (dibutuhkan untuk mode proxy). Install: pkg install python");
-      ctx.py = new PythonTransport(bin, proxy);
+      if (!bin) {
+        if (proxy) throw new Error("python3 tidak ditemukan (dibutuhkan untuk mode proxy). Install: pkg install python");
+        ctx.transport = "fetch";
+      } else {
+        ctx.py = new PythonTransport(bin, proxy);
+      }
     }
 
     await preflight(ctx, cleanUrl);

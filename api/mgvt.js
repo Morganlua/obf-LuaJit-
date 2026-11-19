@@ -33,7 +33,7 @@ const rawOf = (e) =>
     .filter(Boolean)
     .join(" | ");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const isSfl = (h) => /(^|\.)(sfl\.gl|khadavi\.com|khadavi\.net)$/i.test(h);
+const isSfl = (h) => /(^|\.)(sfl\.gl|(khadd?avi)\.(com|net))$/i.test(h);
 
 const bersih = (u) => {
   try {
@@ -243,7 +243,7 @@ function makeClient() {
     const hop = sniffBody(body, base);
     if (hop && hop !== base) return hop;
     const SKIP =
-      /(^|\.)(sfl\.gl|khadavi\.com|khadavi\.net|w3\.org|google\.com|googleapis\.com|gstatic\.com|cloudflare\.com|jquery\.com|facebook\.com|twitter\.com)$/i;
+      /(^|\.)(sfl\.gl|(khadd?avi)\.(com|net)|w3\.org|google\.com|googleapis\.com|gstatic\.com|cloudflare\.com|jquery\.com|facebook\.com|twitter\.com)$/i;
     for (const mm of body.replace(/\\+\//g, "/").matchAll(/https?:\/\/[^\s"'<>\\)]+/gi)) {
       try {
         const u = new URL(mm[0]);
@@ -356,8 +356,8 @@ async function bypass(input) {
   };
   try {
     if (!input) throw new SflError("Link belum diisi.", "input kosong");
-    const matchUrl = String(input).match(/(?:https?:\/\/)?(?:[a-z0-9-]+\.)*(?:sfl\.gl|khadavi\.com|khadavi\.net)(?:\/[^\s]*)?/i);
-    if (!matchUrl) throw new SflError("Link harus dari domain sfl.gl, khadavi.com, atau khadavi.net.", String(input));
+    const matchUrl = String(input).match(/(?:https?:\/\/)?(?:[a-z0-9-]+\.)*(?:sfl\.gl|(?:khadd?avi)\.(?:com|net))(?:\/[^\s]*)?/i);
+    if (!matchUrl) throw new SflError("Link harus dari domain sfl.gl, khaddavi.net, atau khaddavi.com.", String(input));
 
     const startUrl = /^https?:\/\//i.test(matchUrl[0]) ? matchUrl[0] : "https://" + matchUrl[0];
     const client = makeClient();

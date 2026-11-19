@@ -9,8 +9,8 @@ const ENGINES = {
 };
 
 const HOSTS = [
-  { test: /(^|\.)(sfl\.gl|khadavi\.com|khadavi\.net)$/i, engine: "mgvt" },
-  { test: /(^|\.)(bicolink\\.com|bico\\.link|bicosafe\\.com|bicolink\\.net|bclnk\\.net|khadavi\\.com|khadavi\\.net)$/i, engine: "umpc" },
+  { test: /(^|\.)(sfl\.gl|(khadd?avi)\.(com|net))$/i, engine: "mgvt" },
+  { test: /(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net)$/i, engine: "umpc" },
 ];
 
 function pickEngine(url) {
