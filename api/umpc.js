@@ -385,12 +385,6 @@ async function perform(ctx, url, method, body, headers, timeoutMs) {
       timeoutMs
     );
   } catch (e) {
-    // Fallback otomatis jika domain redirect perantara (seperti bewbin.com) mengalami jeda sekejap
-    if (hop < 3) {
-      ctx.trace.push(`retry hop due to error: ${e.message}`);
-      await delay(1000);
-      continue;
-    }
     throw new Error(`Gagal menghubungi ${new URL(url).hostname}: ${e.message}`);
   } finally {
     clearTimeout(timer);
