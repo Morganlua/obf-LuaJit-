@@ -747,7 +747,14 @@ Engine : ${engine}`;
 
       try {
         const res = await fetch(`/api/${engine}?url=${encodeURIComponent(targetUrl)}`);
-        const data = await res.json();
+        const rawText = await res.text();
+        let data = null;
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          const cleanSnippet = rawText.replace(/\s+/g, " ").trim().slice(0, 180);
+          throw new Error(`HTTP ${res.status}: ${cleanSnippet || "Respon bukan JSON"}`);
+        }
         const elapsed = typeof data.execution_time_ms === "number" ? data.execution_time_ms : Math.round(performance.now() - t0);
         stopMsCounter(elapsed);
 
