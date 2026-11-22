@@ -3,584 +3,511 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Noxis React Ch</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+  <title>Noxis — Bypass Link</title>
   <style>
-    :root {
-      --bg: #fdfbf7;
-      --surface: #ffffff;
-      --orange: #ff4500;
-      --orange-hover: #e03d00;
-      --yellow: #ffcc00;
-      --green: #00e676;
-      --blue: #00b0ff;
-      --red: #ff3d00;
-      --ink: #111111;
-      --border: 4px solid #111111;
-      --shadow: 6px 6px 0px #111111;
-      --shadow-sm: 3px 3px 0px #111111;
-    }
-
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
-    #loading-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: var(--bg);
-      background-image: radial-gradient(#111111 1.2px, transparent 1.2px);
-      background-size: 28px 28px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      transition: opacity 0.5s ease, visibility 0.5s ease;
-    }
-
-    .loading-container {
-      width: 320px;
-      background: var(--surface);
-      border: var(--border);
-      box-shadow: var(--shadow);
-      padding: 28px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .loading-title {
-      font-size: 1.4rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: -0.5px;
-    }
-
-    .loading-bar-wrapper {
-      width: 100%;
-      height: 16px;
-      background: #eee;
-      border: 3px solid #111;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .loading-bar-fill {
-      width: 0%;
-      height: 100%;
-      background: var(--orange);
-      transition: width 0.1s linear;
-    }
-
-    .loading-percentage {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 800;
-      font-size: 0.95rem;
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes pulseBadge {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.04); }
-    }
-
     body {
-      background-color: var(--bg);
-      background-image: radial-gradient(#111111 1.2px, transparent 1.2px);
-      background-size: 28px 28px;
-      color: var(--ink);
-      font-family: 'Space Grotesk', sans-serif;
+      background-color: #0b0c0e;
+      background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 26px 26px;
+      color: #f3f4f6;
+      font-family: Arial, Helvetica, sans-serif;
       min-height: 100vh;
       display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px 14px 36px;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      opacity: 0;
-      transition: opacity 0.4s ease-in;
-    }
-
-    body.loaded {
-      opacity: 1;
-    }
-
-    header {
-      background: var(--orange);
-      border-bottom: var(--border);
-      padding: 24px 32px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      box-shadow: 0 4px 0px #111111;
-      animation: fadeInUp 0.5s ease-out;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
       gap: 14px;
     }
 
-    .brand-badge {
-      background: var(--yellow);
-      border: var(--border);
-      box-shadow: var(--shadow-sm);
-      padding: 8px 16px;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 800;
-      font-size: 1rem;
-      animation: pulseBadge 2.5s infinite ease-in-out;
+    .panel {
+      background: #141619;
+      border: 1px solid #2b2f36;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
+      padding: 18px;
     }
 
-    .brand-title {
-      font-size: 2rem;
-      font-weight: 800;
-      color: #ffffff;
-      text-shadow: 3px 3px 0px #111111;
-      text-transform: uppercase;
-      letter-spacing: -0.5px;
-    }
-
-    .channel-btn {
-      background: var(--yellow);
-      color: var(--ink);
-      border: var(--border);
-      box-shadow: var(--shadow-sm);
-      padding: 10px 18px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
-      font-weight: 800;
-      text-decoration: none;
-      text-transform: uppercase;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .channel-btn:hover {
-      transform: translate(-2px, -2px);
-      box-shadow: 5px 5px 0px #111111;
-    }
-
-    main {
-      width: 100%;
-      max-width: 860px;
-      margin: 40px auto;
-      padding: 0 20px;
-      flex: 1;
+    .header-box {
       display: flex;
-      flex-direction: column;
-      gap: 32px;
-      animation: fadeInUp 0.6s ease-out;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
     }
 
-    .card {
-      background: var(--surface);
-      border: var(--border);
-      box-shadow: var(--shadow);
-      padding: 34px;
-      border-radius: 6px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    .sub-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      margin-bottom: 6px;
     }
 
-    .card:hover {
-      transform: translate(-2px, -2px);
-      box-shadow: 8px 8px 0px #111111;
+    .main-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.15;
     }
 
-    .card-header {
+    .desc-text {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #b8bec7;
+      line-height: 1.45;
+    }
+
+    .popup-badge {
+      background: #1b1e24;
+      border: 1px solid #3c424d;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      white-space: nowrap;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #cbd5e1;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .neo-field {
+      width: 100%;
+      background: #0d0f12;
+      border: 1px solid #2e333c;
+      color: #f9fafb;
+      padding: 11px 12px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .neo-field:focus {
+      border-color: #6b7280;
+      background: #111418;
+    }
+
+    .btn-secondary {
+      background: #1c1f26;
+      border: 1px solid #343944;
+      color: #e5e7eb;
+      padding: 0 14px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-secondary:hover {
+      background: #252a34;
+      border-color: #525968;
+    }
+
+    .engine-bar {
+      background: #0d0f12;
+      border: 1px solid #2b2f36;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #cbd5e1;
+      margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 14px;
-      border-bottom: 3px solid #111111;
+      gap: 8px;
     }
 
-    .card-title {
-      font-size: 1.3rem;
-      font-weight: 800;
+    .engine-value {
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .btn-start {
+      width: 100%;
+      background: #20242c;
+      border: 1px solid #444b58;
+      color: #ffffff;
+      padding: 12px 16px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
       text-transform: uppercase;
-      letter-spacing: -0.3px;
+      cursor: pointer;
     }
 
-    .input-group {
+    .btn-start:hover:not(:disabled) {
+      background: #2b303b;
+      border-color: #687285;
+    }
+
+    .btn-start:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .logs-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #262a32;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+
+    .logs-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #e5e7eb;
+    }
+
+    .ms-badge {
+      background: #0d0f12;
+      border: 1px solid #2b2f36;
+      color: #a3e635;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+    }
+
+    .log-list {
+      list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      margin-bottom: 20px;
+      gap: 7px;
+      font-size: 13px;
+      color: #d1d5db;
     }
 
-    .input-label {
-      font-weight: 800;
-      font-size: 0.95rem;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-
-    .neo-input {
-      width: 100%;
-      height: 60px;
-      padding: 0 20px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1rem;
-      font-weight: 700;
-      background: var(--bg);
-      border: var(--border);
-      color: var(--ink);
-      outline: none;
-      box-shadow: var(--shadow-sm);
-      transition: all 0.2s ease;
-    }
-
-    .neo-input:focus {
-      background: #ffffff;
-      transform: translate(-3px, -3px);
-      box-shadow: 6px 6px 0px #111111;
-    }
-
-    .emoji-picker-row {
+    .log-list li {
       display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.4;
+    }
+
+    .log-bullet {
+      color: #9ca3af;
+      font-weight: 700;
+    }
+
+    .log-done {
+      color: #86efac;
+      font-weight: 700;
+    }
+
+    .log-err {
+      color: #fca5a5;
+      font-weight: 700;
+    }
+
+    .result-box {
+      background: #0d0f12;
+      border: 1px solid #2e333c;
+      color: #e5e7eb;
+      padding: 12px;
+      font-size: 12.5px;
+      word-break: break-all;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .result-box.has-link {
+      color: #ffffff;
+      border-color: #4b5563;
+    }
+
+    .action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-    }
-
-    .emoji-pill {
-      background: var(--yellow);
-      border: var(--border);
-      box-shadow: var(--shadow-sm);
-      padding: 8px 14px;
-      font-size: 1.2rem;
-      cursor: pointer;
-      transition: transform 0.15s ease, background 0.15s ease;
-    }
-
-    .emoji-pill:hover {
-      background: #ffd500;
-      transform: translate(-2px, -2px);
-      box-shadow: 5px 5px 0px #111111;
     }
 
     .btn-action {
-      margin-top: 10px;
-      width: 100%;
-      height: 62px;
-      background: var(--orange);
-      color: #ffffff;
-      border: var(--border);
-      box-shadow: var(--shadow);
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.25rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
-    }
-
-    .btn-action:hover:not(:disabled) {
-      background: var(--orange-hover);
-      transform: translate(-3px, -3px);
-      box-shadow: 9px 9px 0px #111111;
-    }
-
-    .btn-action:active:not(:disabled) {
-      transform: translate(2px, 2px);
-      box-shadow: 2px 2px 0px #111111;
-    }
-
-    .btn-action:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      background: #888888;
-    }
-
-    .logs-box {
-      background: #141414;
-      color: #f8f8f2;
-      border: var(--border);
-      box-shadow: var(--shadow);
-      padding: 22px;
-      font-family: 'JetBrains Mono', monospace;
-      border-radius: 4px;
-      max-height: 320px;
-      overflow-y: auto;
-    }
-
-    .logs-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid #333333;
-      padding-bottom: 12px;
-      margin-bottom: 16px;
-    }
-
-    .logs-heading {
-      font-weight: 800;
-      font-size: 0.95rem;
-      color: var(--yellow);
-      text-transform: uppercase;
-    }
-
-    .log-content {
-      font-size: 0.9rem;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .error-alert {
-      background: var(--red);
-      color: #ffffff;
-      border: var(--border);
-      box-shadow: var(--shadow-sm);
-      padding: 14px 18px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
+      background: #1c1f26;
+      border: 1px solid #383e4a;
+      color: #f3f4f6;
+      padding: 11px 12px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
       font-weight: 700;
-      display: none;
-      margin-top: 16px;
-    }
-
-    .success-alert {
-      background: var(--green);
-      color: #111111;
-      border: var(--border);
-      box-shadow: var(--shadow-sm);
-      padding: 14px 18px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
-      font-weight: 700;
-      display: none;
-      margin-top: 16px;
-    }
-
-    footer {
-      background: var(--surface);
-      border-top: var(--border);
-      padding: 26px;
       text-align: center;
-      box-shadow: 0 -4px 0px #111111;
+      text-decoration: none;
+      cursor: pointer;
     }
 
-    .footer-main {
-      font-size: 1.05rem;
-      font-weight: 800;
-      color: var(--ink);
+    .btn-action:hover:not(.disabled-link) {
+      background: #272c37;
+      border-color: #5c6578;
     }
 
-    .footer-sub {
-      margin-top: 8px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--orange);
+    .disabled-link {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    .footer-credit {
+      text-align: center;
+      font-size: 12px;
+      color: #9ca3af;
+      padding-top: 4px;
     }
   </style>
 </head>
 <body>
-
-  <div id="loading-screen">
-    <div class="loading-container">
-      <div class="loading-title">Noxis React Ch</div>
-      <div class="loading-bar-wrapper">
-        <div class="loading-bar-fill" id="loadingBarFill"></div>
-      </div>
-      <div class="loading-percentage" id="loadingPercentage">0%</div>
-    </div>
-  </div>
-
-  <header>
-    <div class="brand">
-      <div class="brand-badge">NOXIS</div>
-      <div class="brand-title">Noxis React Ch</div>
-    </div>
-    <a href="https://whatsapp.com/channel/0029Vb82nkLEwEjtLSQ49I44" target="_blank" rel="noopener noreferrer" class="channel-btn">Saluran WA</a>
-  </header>
-
-  <main>
-    <section class="card">
-      <div class="card-header">
-        <span class="card-title">Kirim Auto Reaction</span>
-        <span style="font-family:'JetBrains Mono'; font-weight:800; font-size:0.85rem; background:#ffcc00; border:2px solid #111; padding:4px 10px; box-shadow:2px 2px 0px #111;">VIP MULTI-KEY</span>
-      </div>
-
-      <div class="input-group">
-        <label class="input-label" for="channelUrl">URL Post WhatsApp Channel</label>
-        <input
-          type="url"
-          id="channelUrl"
-          class="neo-input"
-          placeholder="https://whatsapp.com/channel/0029VbDyL6d9RZAh3JjEM325/158"
-          autocomplete="off"
-        />
-      </div>
-
-      <div class="input-group">
-        <label class="input-label" for="emojiInput">Pilih atau Ketik Emoji (Maks 5, pisah koma)</label>
-        <div class="emoji-picker-row">
-          <button type="button" class="emoji-pill" onclick="addEmoji('👍')">👍</button>
-          <button type="button" class="emoji-pill" onclick="addEmoji('❤️')">❤️</button>
-          <button type="button" class="emoji-pill" onclick="addEmoji('🔥')">🔥</button>
-          <button type="button" class="emoji-pill" onclick="addEmoji('😂')">😂</button>
-          <button type="button" class="emoji-pill" onclick="addEmoji('💦')">💦</button>
-          <button type="button" class="emoji-pill" onclick="addEmoji('🚀')">🚀</button>
-          <button type="button" class="emoji-pill" onclick="addEmoji('🎉')">🎉</button>
-          <button type="button" class="emoji-pill" onclick="addEmoji('👏')">👏</button>
+  <div class="app-shell">
+    <section class="panel">
+      <div class="header-box">
+        <div>
+          <div class="sub-kicker">Bypass Link</div>
+          <h1 class="main-title">Bypass Link</h1>
+          <p class="desc-text">Website Ini Membantu Kalian untuk melewati semua short link</p>
         </div>
+        <div class="popup-badge">Noxis</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-title">
+        <span>Masukan Link</span>
+      </div>
+      <div class="input-row">
         <input
           type="text"
-          id="emojiInput"
-          class="neo-input"
-          placeholder="👍 atau 💦,👍"
+          id="linkInput"
+          class="neo-field"
+          placeholder="Tempel link short link di sini..."
+          oninput="detectEngineLive()"
           autocomplete="off"
         />
+        <button type="button" class="btn-secondary" onclick="pasteLink()">Tempel</button>
       </div>
 
-      <button type="button" class="btn-action" id="btnSend" onclick="sendReaction()">Kirim Reaction Sekarang</button>
+      <div class="engine-bar">
+        <span>Engine Terdeteksi:</span>
+        <span class="engine-value" id="detectedEngine">-</span>
+      </div>
+
+      <button type="button" class="btn-start" id="startBtn" onclick="startBypass()">Start</button>
     </section>
 
-    <section class="card">
-      <div class="card-header">
-        <span class="card-title">Console & Status Eksekusi</span>
+    <section class="panel">
+      <div class="logs-header">
+        <span class="logs-title">LOGS</span>
+        <span class="ms-badge" id="msBadge">0 ms</span>
       </div>
-
-      <div class="logs-box">
-        <div class="logs-top">
-          <span class="logs-heading">System Output</span>
-          <span style="font-family:'JetBrains Mono'; font-size:0.85rem; color:#00e676;" id="statusBadge">IDLE</span>
-        </div>
-        <div class="log-content" id="logContent">Sistem siap menerima perintah. Masukkan URL dan emoji di atas...</div>
-      </div>
-
-      <div class="error-alert" id="errorBox"></div>
-      <div class="success-alert" id="successBox"></div>
+      <ul class="log-list" id="logList">
+        <li><span class="log-bullet">•</span><span>Membaca Link</span></li>
+        <li><span class="log-bullet">•</span><span>Proses</span></li>
+        <li><span class="log-bullet">•</span><span>Menyiapkan Link</span></li>
+        <li><span class="log-bullet">•</span><span>Selesai berhasil</span></li>
+      </ul>
     </section>
-  </main>
 
-  <footer>
-    <div class="footer-main">Website ini dibuat oleh King Noxis Lua yang ganteng</div>
-    <div class="footer-sub">Noxis React Ch Engine v2.0</div>
-  </footer>
+    <section class="panel">
+      <div class="section-title">
+        <span>Hasil Link</span>
+      </div>
+      <div class="result-box" id="resultBox">Link akan muncul di sini</div>
+      <div class="action-row">
+        <button type="button" class="btn-action" id="copyBtn" onclick="copyResult()">Salin</button>
+        <a href="#" target="_blank" rel="noopener noreferrer" class="btn-action disabled-link" id="openBtn">Buka link</a>
+      </div>
+    </section>
+
+    <footer class="footer-credit">Credits Noxis Ganteng sedunia wkwk</footer>
+  </div>
 
   <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      let progress = 0;
-      const fill = document.getElementById("loadingBarFill");
-      const text = document.getElementById("loadingPercentage");
-      const screen = document.getElementById("loading-screen");
+    let currentResultUrl = "";
 
-      const interval = setInterval(() => {
-        progress += Math.floor(Math.random() * 18) + 8;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          fill.style.width = "100%";
-          text.textContent = "100%";
-          setTimeout(() => {
-            screen.style.opacity = "0";
-            screen.style.visibility = "hidden";
-            document.body.classList.add("loaded");
-          }, 300);
-        } else {
-          fill.style.width = progress + "%";
-          text.textContent = progress + "%";
-        }
-      }, 50);
-    });
+    const ENGINE_RULES = [
+      { test: /(^|\.)(sfl\.gl|(khadd?avi)\.(com|net))$/i, label: "MGVT (SafelinkU)" },
+      { test: /(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net)$/i, label: "UMPC (Bicolink)" },
+      { test: /(^|\.)(linkvertise\.(com|net|download)|link-to\.net|file-link\.net|direct-link\.net)$/i, label: "LV (Linkvertise)" },
+      {
+        test: /(^|\.)(rekonise\.com|sub2unlock\.(com|net)|ytsubme\.com|sub4unlock\.(io|com|co|net|org|me)|unlocknow\.net|sub2get\.com|subfinal\.com|mboost\.me|social-unlock\.com|socialwolvez\.com|paster\.(so|gg)|cuty\.io|adfoc\.us|mendationforc\.info)$/i,
+        label: "SOCIAL (Social Unlock)",
+      },
+    ];
 
-    function addEmoji(emoji) {
-      const input = document.getElementById("emojiInput");
-      const current = input.value.trim();
-      if (!current) {
-        input.value = emoji;
-      } else {
-        input.value = current + ", " + emoji;
+    function detectEngineLive() {
+      const raw = document.getElementById("linkInput").value.trim();
+      const badge = document.getElementById("detectedEngine");
+      if (!raw) {
+        badge.textContent = "-";
+        return;
+      }
+      try {
+        const normalized = /^https?:\/\//i.test(raw) ? raw : "https://" + raw;
+        const host = new URL(normalized).hostname.toLowerCase();
+        const hit = ENGINE_RULES.find((r) => r.test.test(host));
+        badge.textContent = hit ? hit.label : "Tidak dikenal";
+      } catch {
+        badge.textContent = "-";
       }
     }
 
-    async function sendReaction() {
-      const url = document.getElementById("channelUrl").value.trim();
-      const reaction = document.getElementById("emojiInput").value.trim();
-      const btn = document.getElementById("btnSend");
-      const log = document.getElementById("logContent");
-      const statusBadge = document.getElementById("statusBadge");
-      const errorBox = document.getElementById("errorBox");
-      const successBox = document.getElementById("successBox");
+    async function pasteLink() {
+      const input = document.getElementById("linkInput");
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const text = await navigator.clipboard.readText();
+          if (text) {
+            input.value = text.trim();
+            detectEngineLive();
+            return;
+          }
+        }
+      } catch {}
+      input.focus();
+    }
 
-      errorBox.style.display = "none";
-      successBox.style.display = "none";
+    function setLogs(items) {
+      const list = document.getElementById("logList");
+      list.innerHTML = items
+        .map((item) => {
+          const cls = item.type === "err" ? "log-err" : item.type === "ok" ? "log-done" : "";
+          return `<li><span class="log-bullet">•</span><span class="${cls}">${item.text}</span></li>`;
+        })
+        .join("");
+    }
 
-      if (!url || !reaction) {
-        errorBox.textContent = "URL Channel WhatsApp dan Emoji wajib diisi!";
-        errorBox.style.display = "block";
+    function setResultLink(url) {
+      const box = document.getElementById("resultBox");
+      const openBtn = document.getElementById("openBtn");
+      currentResultUrl = url || "";
+      if (currentResultUrl) {
+        box.textContent = currentResultUrl;
+        box.classList.add("has-link");
+        openBtn.href = currentResultUrl;
+        openBtn.classList.remove("disabled-link");
+      } else {
+        box.textContent = "Link akan muncul di sini";
+        box.classList.remove("has-link");
+        openBtn.href = "#";
+        openBtn.classList.add("disabled-link");
+      }
+    }
+
+    async function startBypass() {
+      const rawUrl = document.getElementById("linkInput").value.trim();
+      const startBtn = document.getElementById("startBtn");
+      const msBadge = document.getElementById("msBadge");
+      const engineBadge = document.getElementById("detectedEngine");
+
+      setResultLink("");
+      msBadge.textContent = "0 ms";
+
+      if (!rawUrl) {
+        setLogs([
+          { text: "Membaca Link", type: "err" },
+          { text: "Proses", type: "" },
+          { text: "Menyiapkan Link", type: "" },
+          { text: "Gagal: Link belum diisi", type: "err" },
+        ]);
         return;
       }
 
-      btn.disabled = true;
-      btn.textContent = "Mengirim...";
-      statusBadge.textContent = "PROCESSING";
-      statusBadge.style.color = "#ffcc00";
-      log.textContent = `[${new Date().toLocaleTimeString()}] Mengirim request reaction ke server...\nTarget: ${url}\nEmoji: ${reaction}`;
+      detectEngineLive();
+      startBtn.disabled = true;
+      startBtn.textContent = "Memproses...";
+
+      setLogs([
+        { text: "Membaca Link", type: "ok" },
+        { text: "Proses", type: "" },
+        { text: "Menyiapkan Link", type: "" },
+        { text: "Selesai berhasil", type: "" },
+      ]);
+
+      const tStart = performance.now();
 
       try {
-        const res = await fetch("/api/react", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url, reaction })
-        });
+        const res = await fetch(`/api/bypass?url=${encodeURIComponent(rawUrl)}`);
+        const data = await res.json();
+        const elapsed = Math.round(data.execution_time_ms || performance.now() - tStart);
+        msBadge.textContent = `${elapsed} ms`;
 
-        const rawText = await res.text();
-        let data;
-        try {
-          data = JSON.parse(rawText);
-        } catch {
-          throw new Error(`Respons server bukan JSON valid (HTTP ${res.status}): ${rawText.slice(0, 160)}`);
+        if (data.engine_label) {
+          engineBadge.textContent = data.engine_label;
         }
 
-        if (res.ok && data.status) {
-          statusBadge.textContent = "SUCCESS";
-          statusBadge.style.color = "#00e676";
-          successBox.textContent = `Berhasil! ${data.message || "Reaction terkirim."} (Waktu: ${data.time || "-"})`;
-          successBox.style.display = "block";
-          log.textContent += `\n\n[SUCCESS] Response:\n${JSON.stringify(data, null, 2)}`;
+        if (res.ok && data.status && data.data && data.data.bypassed_url) {
+          setLogs([
+            { text: "Membaca Link", type: "ok" },
+            { text: "Proses", type: "ok" },
+            { text: "Menyiapkan Link", type: "ok" },
+            { text: "Selesai berhasil", type: "ok" },
+          ]);
+          setResultLink(data.data.bypassed_url);
         } else {
-          statusBadge.textContent = "FAILED";
-          statusBadge.style.color = "#ff3d00";
-          errorBox.textContent = `Gagal: ${data.error || `HTTP ${res.status}`}`;
-          errorBox.style.display = "block";
-          log.textContent += `\n\n[ERROR] Response:\n${JSON.stringify(data, null, 2)}`;
+          setLogs([
+            { text: "Membaca Link", type: "ok" },
+            { text: "Proses", type: "err" },
+            { text: "Menyiapkan Link", type: "" },
+            { text: `Gagal: ${data.error || "Tidak dapat memproses link"}`, type: "err" },
+          ]);
         }
       } catch (err) {
-        statusBadge.textContent = "ERROR";
-        statusBadge.style.color = "#ff3d00";
-        const msg = err && err.message ? err.message : String(err);
-        errorBox.textContent = `Network Error: ${msg}`;
-        errorBox.style.display = "block";
-        log.textContent += `\n\n[EXCEPTION] ${msg}`;
+        const elapsed = Math.round(performance.now() - tStart);
+        msBadge.textContent = `${elapsed} ms`;
+        setLogs([
+          { text: "Membaca Link", type: "ok" },
+          { text: "Proses", type: "err" },
+          { text: "Menyiapkan Link", type: "" },
+          { text: `Error: ${(err && err.message) || "Koneksi gagal"}`, type: "err" },
+        ]);
       } finally {
-        btn.disabled = false;
-        btn.textContent = "Kirim Reaction Sekarang";
+        startBtn.disabled = false;
+        startBtn.textContent = "Start";
       }
+    }
+
+    async function copyResult() {
+      const copyBtn = document.getElementById("copyBtn");
+      if (!currentResultUrl) return;
+      try {
+        await navigator.clipboard.writeText(currentResultUrl);
+        const old = copyBtn.textContent;
+        copyBtn.textContent = "Tersalin";
+        setTimeout(() => {
+          copyBtn.textContent = old;
+        }, 1400);
+      } catch {}
     }
   </script>
 </body>
