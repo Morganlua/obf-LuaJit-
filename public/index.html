@@ -11,6 +11,62 @@
       padding: 0;
     }
 
+    /* Bar Loading saat pertama kali membuka web */
+    #boot-loader {
+      position: fixed;
+      inset: 0;
+      background: #0b0c0e;
+      background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 26px 26px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+
+    #boot-loader.hide {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .boot-box {
+      width: 90%;
+      max-width: 340px;
+      background: #141619;
+      border: 1px solid #2b2f36;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+      padding: 18px;
+    }
+
+    .boot-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #f3f4f6;
+      letter-spacing: 0.6px;
+    }
+
+    .boot-track {
+      width: 100%;
+      height: 10px;
+      background: #0d0f12;
+      border: 1px solid #2e333c;
+      overflow: hidden;
+    }
+
+    .boot-fill {
+      width: 0%;
+      height: 100%;
+      background: #e5e7eb;
+      transition: width 0.12s linear;
+    }
+
     body {
       background-color: #0b0c0e;
       background-image:
@@ -200,37 +256,56 @@
       font-size: 11px;
       font-weight: 700;
       padding: 4px 8px;
+      min-width: 66px;
+      text-align: center;
     }
 
     .log-list {
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 7px;
+      gap: 8px;
       font-size: 13px;
       color: #d1d5db;
     }
 
     .log-list li {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 8px;
       line-height: 1.4;
     }
 
     .log-bullet {
+      font-weight: 700;
       color: #9ca3af;
+    }
+
+    .step-active {
+      color: #fde047;
       font-weight: 700;
     }
 
-    .log-done {
+    .step-active .log-bullet {
+      color: #fde047;
+    }
+
+    .step-done {
       color: #86efac;
       font-weight: 700;
     }
 
-    .log-err {
+    .step-done .log-bullet {
+      color: #4ade80;
+    }
+
+    .step-err {
       color: #fca5a5;
       font-weight: 700;
+    }
+
+    .step-err .log-bullet {
+      color: #f87171;
     }
 
     .result-box {
@@ -289,6 +364,18 @@
   </style>
 </head>
 <body>
+  <div id="boot-loader">
+    <div class="boot-box">
+      <div class="boot-top">
+        <span>NOXIS BYPASS LINK</span>
+        <span id="bootPct">0%</span>
+      </div>
+      <div class="boot-track">
+        <div class="boot-fill" id="bootFill"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="app-shell">
     <section class="panel">
       <div class="header-box">
@@ -331,10 +418,10 @@
         <span class="ms-badge" id="msBadge">0 ms</span>
       </div>
       <ul class="log-list" id="logList">
-        <li><span class="log-bullet">•</span><span>Membaca Link</span></li>
-        <li><span class="log-bullet">•</span><span>Proses</span></li>
-        <li><span class="log-bullet">•</span><span>Menyiapkan Link</span></li>
-        <li><span class="log-bullet">•</span><span>Selesai berhasil</span></li>
+        <li data-step="0"><span class="log-bullet">•</span><span>Membaca Link</span></li>
+        <li data-step="1"><span class="log-bullet">•</span><span>Proses</span></li>
+        <li data-step="2"><span class="log-bullet">•</span><span>Menyiapkan Link</span></li>
+        <li data-step="3"><span class="log-bullet">•</span><span>Selesai berhasil</span></li>
       </ul>
     </section>
 
@@ -354,16 +441,45 @@
 
   <script>
     let currentResultUrl = "";
+    let msTimerId = null;
 
     const ENGINE_RULES = [
       { test: /(^|\.)(sfl\.gl|(khadd?avi)\.(com|net))$/i, label: "MGVT (SafelinkU)" },
-      { test: /(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net)$/i, label: "UMPC (Bicolink)" },
-      { test: /(^|\.)(linkvertise\.(com|net|download)|link-to\.net|file-link\.net|direct-link\.net)$/i, label: "LV (Linkvertise)" },
+      {
+        test: /(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net|honmia\.com)$/i,
+        label: "UMPC (Bicolink)",
+      },
+      {
+        test: /(^|\.)(linkvertise\.(com|net|download)|link-to\.net|file-link\.net|direct-link\.net)$/i,
+        label: "LV (Linkvertise)",
+      },
       {
         test: /(^|\.)(rekonise\.com|sub2unlock\.(com|net)|ytsubme\.com|sub4unlock\.(io|com|co|net|org|me)|unlocknow\.net|sub2get\.com|subfinal\.com|mboost\.me|social-unlock\.com|socialwolvez\.com|paster\.(so|gg)|cuty\.io|adfoc\.us|mendationforc\.info)$/i,
         label: "SOCIAL (Social Unlock)",
       },
     ];
+
+    // Animasi bar loading saat halaman pertama kali dibuka
+    window.addEventListener("DOMContentLoaded", () => {
+      const loader = document.getElementById("boot-loader");
+      const fill = document.getElementById("bootFill");
+      const pct = document.getElementById("bootPct");
+      let val = 0;
+
+      const timer = setInterval(() => {
+        val += Math.floor(Math.random() * 18) + 12;
+        if (val >= 100) {
+          val = 100;
+          clearInterval(timer);
+          fill.style.width = "100%";
+          pct.textContent = "100%";
+          setTimeout(() => loader.classList.add("hide"), 180);
+        } else {
+          fill.style.width = val + "%";
+          pct.textContent = val + "%";
+        }
+      }, 45);
+    });
 
     function detectEngineLive() {
       const raw = document.getElementById("linkInput").value.trim();
@@ -397,15 +513,45 @@
       input.focus();
     }
 
-    function setLogs(items) {
-      const list = document.getElementById("logList");
-      list.innerHTML = items
-        .map((item) => {
-          const cls = item.type === "err" ? "log-err" : item.type === "ok" ? "log-done" : "";
-          return `<li><span class="log-bullet">•</span><span class="${cls}">${item.text}</span></li>`;
-        })
-        .join("");
+    const DEFAULT_LABELS = [
+      "Membaca Link",
+      "Proses",
+      "Menyiapkan Link",
+      "Selesai berhasil",
+    ];
+
+    function renderLogStates(states, customLabels = null) {
+      const items = document.querySelectorAll("#logList li");
+      items.forEach((li, idx) => {
+        const state = states[idx] || "";
+        const label = (customLabels && customLabels[idx]) || DEFAULT_LABELS[idx];
+        li.className = "";
+        if (state === "active") li.classList.add("step-active");
+        if (state === "done") li.classList.add("step-done");
+        if (state === "err") li.classList.add("step-err");
+        li.innerHTML = `<span class="log-bullet">•</span><span>${label}</span>`;
+      });
     }
+
+    function startMsCounter(tStart) {
+      stopMsCounter();
+      const msBadge = document.getElementById("msBadge");
+      msTimerId = setInterval(() => {
+        msBadge.textContent = `${Math.round(performance.now() - tStart)} ms`;
+      }, 25);
+    }
+
+    function stopMsCounter(finalMs = null) {
+      if (msTimerId) {
+        clearInterval(msTimerId);
+        msTimerId = null;
+      }
+      if (finalMs !== null && finalMs !== undefined) {
+        document.getElementById("msBadge").textContent = `${Math.round(finalMs)} ms`;
+      }
+    }
+
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
     function setResultLink(url) {
       const box = document.getElementById("resultBox");
@@ -427,18 +573,17 @@
     async function startBypass() {
       const rawUrl = document.getElementById("linkInput").value.trim();
       const startBtn = document.getElementById("startBtn");
-      const msBadge = document.getElementById("msBadge");
       const engineBadge = document.getElementById("detectedEngine");
 
       setResultLink("");
-      msBadge.textContent = "0 ms";
+      stopMsCounter(0);
 
       if (!rawUrl) {
-        setLogs([
-          { text: "Membaca Link", type: "err" },
-          { text: "Proses", type: "" },
-          { text: "Menyiapkan Link", type: "" },
-          { text: "Gagal: Link belum diisi", type: "err" },
+        renderLogStates(["err", "", "", ""], [
+          "Membaca Link (Link kosong)",
+          "Proses",
+          "Menyiapkan Link",
+          "Selesai berhasil",
         ]);
         return;
       }
@@ -447,54 +592,80 @@
       startBtn.disabled = true;
       startBtn.textContent = "Memproses...";
 
-      setLogs([
-        { text: "Membaca Link", type: "ok" },
-        { text: "Proses", type: "" },
-        { text: "Menyiapkan Link", type: "" },
-        { text: "Selesai berhasil", type: "" },
-      ]);
-
       const tStart = performance.now();
+      startMsCounter(tStart);
 
-      try {
-        const res = await fetch(`/api/bypass?url=${encodeURIComponent(rawUrl)}`);
-        const data = await res.json();
-        const elapsed = Math.round(data.execution_time_ms || performance.now() - tStart);
-        msBadge.textContent = `${elapsed} ms`;
+      // Langkah 1: Membaca Link -> hijau lalu pindah ke Langkah 2: Proses
+      renderLogStates(["active", "", "", ""]);
+      await wait(160);
+      renderLogStates(["done", "active", "", ""]);
 
-        if (data.engine_label) {
-          engineBadge.textContent = data.engine_label;
-        }
+      let fetchDone = false;
+      let apiResponse = null;
+      let fetchError = null;
 
-        if (res.ok && data.status && data.data && data.data.bypassed_url) {
-          setLogs([
-            { text: "Membaca Link", type: "ok" },
-            { text: "Proses", type: "ok" },
-            { text: "Menyiapkan Link", type: "ok" },
-            { text: "Selesai berhasil", type: "ok" },
-          ]);
-          setResultLink(data.data.bypassed_url);
-        } else {
-          setLogs([
-            { text: "Membaca Link", type: "ok" },
-            { text: "Proses", type: "err" },
-            { text: "Menyiapkan Link", type: "" },
-            { text: `Gagal: ${data.error || "Tidak dapat memproses link"}`, type: "err" },
-          ]);
-        }
-      } catch (err) {
-        const elapsed = Math.round(performance.now() - tStart);
-        msBadge.textContent = `${elapsed} ms`;
-        setLogs([
-          { text: "Membaca Link", type: "ok" },
-          { text: "Proses", type: "err" },
-          { text: "Menyiapkan Link", type: "" },
-          { text: `Error: ${(err && err.message) || "Koneksi gagal"}`, type: "err" },
+      const reqPromise = fetch(`/api/bypass?url=${encodeURIComponent(rawUrl)}`)
+        .then(async (res) => {
+          const json = await res.json();
+          return { ok: res.ok, status: res.status, json };
+        })
+        .catch((err) => {
+          fetchError = err;
+          return null;
+        })
+        .finally(() => {
+          fetchDone = true;
+        });
+
+      // Selama menunggu request, biarkan langkah Proses aktif dan ms terus berjalan
+      await wait(180);
+      if (!fetchDone) {
+        await Promise.race([reqPromise, wait(2200)]);
+      }
+      apiResponse = await reqPromise;
+
+      if (fetchError || !apiResponse) {
+        const elapsed = performance.now() - tStart;
+        stopMsCounter(elapsed);
+        renderLogStates(["done", "err", "", ""], [
+          "Membaca Link",
+          `Proses gagal: ${(fetchError && fetchError.message) || "Koneksi gagal"}`,
+          "Menyiapkan Link",
+          "Selesai berhasil",
         ]);
-      } finally {
         startBtn.disabled = false;
         startBtn.textContent = "Start";
+        return;
       }
+
+      const data = apiResponse.json || {};
+      const elapsed = data.execution_time_ms || performance.now() - tStart;
+
+      if (data.engine_label) {
+        engineBadge.textContent = data.engine_label;
+      }
+
+      if (apiResponse.ok && data.status && data.data && data.data.bypassed_url) {
+        // Langkah 2 selesai hijau -> Langkah 3: Menyiapkan Link aktif lalu hijau
+        renderLogStates(["done", "done", "active", ""]);
+        await wait(160);
+
+        // Langkah 4: Selesai berhasil hijau
+        stopMsCounter(elapsed);
+        renderLogStates(["done", "done", "done", "done"]);
+        setResultLink(data.data.bypassed_url);
+      } else {
+        stopMsCounter(elapsed);
+        renderLogStates(["done", "done", "err", ""], [
+          "Membaca Link",
+          "Proses",
+          `Gagal: ${data.error || "URL tujuan tidak ditemukan"}`,
+          "Selesai berhasil",
+        ]);
+      }
+
+      startBtn.disabled = false;
+      startBtn.textContent = "Start";
     }
 
     async function copyResult() {
