@@ -6,13 +6,26 @@ const UA =
 const BICO_HOST_RE =
   /(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net)$/i;
 
-const SKIP_HOST_RE =
-  /(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net|google\.com|googleapis\.com|gstatic\.com|cloudflare\.com|cloudflareinsights\.com|jquery\.com|bootstrap\.com|bootstrapcdn\.com|fontawesome\.com|jsdelivr\.net|unpkg\.com|w3\.org|googletagmanager\.com|google-analytics\.com|facebook\.com|twitter\.com|x\.com|instagram\.com|youtube\.com|youtu\.be|tiktok\.com|discord\.com|discord\.gg)$/i;
+// Domain iklan / pop-under / smartlink / tracker yang sering disisipkan pada halaman shortlink
+const AD_OR_SKIP_HOST_RE =
+  /(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net|honmia\.com|google\.com|googleapis\.com|gstatic\.com|cloudflare\.com|cloudflareinsights\.com|jquery\.com|bootstrap\.com|bootstrapcdn\.com|fontawesome\.com|jsdelivr\.net|unpkg\.com|w3\.org|googletagmanager\.com|google-analytics\.com|doubleclick\.net|googlesyndication\.com|adservice\.google\.com|facebook\.com|twitter\.com|x\.com|instagram\.com|youtube\.com|youtu\.be|tiktok\.com|discord\.com|discord\.gg|histats\.com|histats\.net|popads\.net|propellerads\.com|exoclick\.com|hilltopads\.net|adsterra\.com|monetag\.com)$/i;
 
 function decodeEntities(str) {
   return String(str || "")
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, d) => String(fromCodePointSafe(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => {
+      try {
+        return String.fromCodePoint(parseInt(h, 16));
+      } catch {
+        return "";
+      }
+    })
+    .replace(/&#(\d+);/g, (_, d) => {
+      try {
+        return String.fromCodePoint(parseInt(d, 10));
+      } catch {
+        return "";
+      }
+    })
     .replace(/&quot;/g, '"')
     .replace(/&#39;|&apos;/g, "'")
     .replace(/&lt;/g, "<")
@@ -20,20 +33,11 @@ function decodeEntities(str) {
     .replace(/&amp;/g, "&");
 }
 
-function fromCodePointSafe(d) {
-  try {
-    return String.fromCodePoint(parseInt(d, 10));
-  } catch {
-    return "";
-  }
-}
-
 function decodeBase64Candidate(raw) {
   try {
     let s = String(raw || "").trim().replace(/-/g, "+").replace(/_/g, "/");
     while (s.length % 4) s += "=";
-    const out = Buffer.from(s, "base64").toString("utf8");
-    return out;
+    return Buffer.from(s, "base64").toString("utf8");
   } catch {
     return "";
   }
@@ -48,13 +52,19 @@ function isStaticOrAsset(u) {
   );
 }
 
+function isAdLikePath(u) {
+  const p = (u.pathname || "").toLowerCase();
+  return /^\/(?:4|5|6|7|8|9)\/[0-9a-f]{16,}$/i.test(p) || /\/(?:ad|ads|banner|popup|popunder|smartlink|clk|clickout)\b/i.test(p);
+}
+
 function isValidTargetUrl(href, sourceUrl) {
   try {
     const u = new URL(href);
     if (!/^https?:$/i.test(u.protocol)) return false;
     if (u.href === sourceUrl) return false;
-    if (SKIP_HOST_RE.test(u.hostname)) return false;
+    if (AD_OR_SKIP_HOST_RE.test(u.hostname)) return false;
     if (isStaticOrAsset(u)) return false;
+    if (isAdLikePath(u)) return false;
     return true;
   } catch {
     return false;
@@ -65,7 +75,7 @@ function extractTargetFromContent(content, baseUrl, sourceUrl, trace) {
   if (!content) return null;
   const text = decodeEntities(String(content).replace(/\\\//g, "/"));
 
-  // 1. Cek query parameter umum seperti ?url= / ?u= / ?link= / ?target= / ?dest= / ?r=
+  // 1. Cek query parameter tujuan eksplisit pada URL saat ini
   try {
     const bu = new URL(baseUrl);
     for (const key of ["url", "u", "link", "target", "dest", "destination", "redirect", "r", "go"]) {
@@ -80,9 +90,9 @@ function extractTargetFromContent(content, baseUrl, sourceUrl, trace) {
     }
   } catch {}
 
-  // 2. Pola redirect / tombol / variabel JS / meta refresh / form action
+  // 2. Prioritaskan link tombol/redirect/variabel eksplisit yang bukan iklan
   const directPatterns = [
-    /(?:window\.location(?:\.href)?|document\.location(?:\.href)?|top\.location(?:\.href)?|location\.replace|location\.assign|window\.open)\s*\(\s*["'`](https?:\/\/[^"'`\s<>]+)["'`]/gi,
+    /(?:window\.location(?:\.href)?|document\.location(?:\.href)?|top\.location(?:\.href)?|location\.replace|location\.assign)\s*\(\s*["'`](https?:\/\/[^"'`\s<>]+)["'`]/gi,
     /(?:var|let|const)\s+(?:url|link|target|dest|destination|redirect|final_url|go_url|next_url)\w*\s*[:=]\s*["'`](https?:\/\/[^"'`\s<>]+)["'`]/gi,
     /["'](?:url|link|target|dest|destination|redirect|final_url)["']\s*:\s*["'`](https?:\/\/[^"'`\s<>]+)["'`]/gi,
     /<a[^>]+(?:id|class)=["'][^"']*(?:link|get|go|continue|download|dest|target|skip|next|btn)[^"']*["'][^>]*href=["'](https?:\/\/[^"'\s<>]+)["']/gi,
@@ -103,7 +113,7 @@ function extractTargetFromContent(content, baseUrl, sourceUrl, trace) {
     }
   }
 
-  // 3. Cek base64 (atob(...) atau string base64 panjang yang ter-decode menjadi http(s)://)
+  // 3. Cek base64 yang ter-decode menjadi URL tujuan valid
   const b64Matches = [
     ...text.matchAll(/atob\s*\(\s*["'`]([A-Za-z0-9+/=_-]{16,})["'`]\s*\)/g),
     ...text.matchAll(/["'`](aHR0c[A-Za-z0-9+/=_-]{14,})["'`]/g),
@@ -113,16 +123,6 @@ function extractTargetFromContent(content, baseUrl, sourceUrl, trace) {
     if (isValidTargetUrl(decoded, sourceUrl)) {
       trace.push(`bico base64 -> ${decoded}`);
       return decoded;
-    }
-  }
-
-  // 4. Scan semua URL http/https yang muncul di body
-  const allUrls = text.match(/https?:\/\/[^\s"'<>\\)\]]+/gi) || [];
-  for (const raw of allUrls) {
-    const cleaned = raw.replace(/[,;'"`\])]+$/, "");
-    if (isValidTargetUrl(cleaned, sourceUrl)) {
-      trace.push(`bico fallback url -> ${cleaned}`);
-      return cleaned;
     }
   }
 
@@ -236,8 +236,7 @@ async function bypassBico(inputUrl) {
     let bypassedUrl = null;
     let lastHtml = "";
 
-    // Ikuti rantai redirect hingga 8 hop
-    for (let hop = 0; hop < 8; hop++) {
+    for (let hop = 0; hop < 6; hop++) {
       const res = await session.request(currentUrl, {
         method: "GET",
         referer,
@@ -248,8 +247,18 @@ async function bypassBico(inputUrl) {
 
       if ([301, 302, 303, 307, 308].includes(res.status) && res.location) {
         const nextUrl = new URL(res.location, currentUrl).href;
+        // Jika redirect mengarah ke domain iklan/smartlink seperti honmia.com, jangan dijadikan link tujuan
         if (isValidTargetUrl(nextUrl, parsed.href)) {
           bypassedUrl = nextUrl;
+          break;
+        }
+        try {
+          const nextHost = new URL(nextUrl).hostname.toLowerCase();
+          if (!BICO_HOST_RE.test(nextHost)) {
+            trace.push(`lewati redirect non-bicolink/iklan: ${nextUrl}`);
+            break;
+          }
+        } catch {
           break;
         }
         referer = currentUrl;
@@ -270,53 +279,9 @@ async function bypassBico(inputUrl) {
       break;
     }
 
-    // Jika belum ketemu, coba POST ke endpoint umum pada domain aktif dan domain asal
-    if (!bypassedUrl) {
-      const activeHost = (() => {
-        try {
-          return new URL(currentUrl).hostname.toLowerCase();
-        } catch {
-          return host;
-        }
-      })();
-      const slug = parsed.pathname.replace(/^\/+|\/+$/g, "").split("/").pop() || "";
-      const candidateHosts = [...new Set([activeHost, host])];
-      const candidatePaths = ["/go", "/get", "/link", "/unlock", "/redirect", "/api/link", "/api/go"];
-
-      for (const h of candidateHosts) {
-        for (const p of candidatePaths) {
-          if (Date.now() - t0 > 18000) break;
-          const ep = `https://${h}${p}`;
-          try {
-            const postRes = await session.request(ep, {
-              method: "POST",
-              referer: currentUrl,
-              redirect: "manual",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ slug, id: slug, code: slug, url: parsed.href }),
-            });
-            if ([301, 302, 303, 307, 308].includes(postRes.status) && postRes.location) {
-              const loc = new URL(postRes.location, ep).href;
-              if (isValidTargetUrl(loc, parsed.href)) {
-                bypassedUrl = loc;
-                trace.push(`bico post redirect ${h}${p} -> ${loc}`);
-                break;
-              }
-            }
-            const foundPost = extractTargetFromContent(postRes.text, ep, parsed.href, trace);
-            if (foundPost) {
-              bypassedUrl = foundPost;
-              break;
-            }
-          } catch {}
-        }
-        if (bypassedUrl) break;
-      }
-    }
-
     if (!bypassedUrl) {
       throw new Error(
-        `URL tujuan tidak ditemukan pada ${host}. Struktur halaman atau proteksi anti-bot pada domain mirror mungkin berbeda dari bicolink.com.`
+        `URL tujuan asli tidak ditemukan pada ${host} (halaman mungkin memakai step/timer/verifikasi di browser dan menyisipkan link iklan).`
       );
     }
 
