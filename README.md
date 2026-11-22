@@ -1,8 +1,5 @@
-# Noxis — Bypass Link (Vercel)
+# Noxis — Bypass Link (v1.2.0)
 
-Struktur proyek siap deploy ke Vercel:
-- `api/index.js` — Router utama bypass link (`mgvt`, `umpc`, `lv`, `social`).
-- `api/umpc.js` — Perbaikan handler Bicolink (`bicolink.com` & domain mirror/terkait) dengan pelacakan redirect, ekstraksi URL/base64/query, dan fallback endpoint.
-- `api/social.js` — Perbaikan handler Social Unlock dengan normalisasi cookie per host, validasi URL target eksternal, dan pembersihan entity HTML.
-- `api/mgvt.js` & `api/lv.js` — Engine SafelinkU dan Linkvertise.
-- `public/index.html` — Antarmuka gelap monokrom bergaya panel neo-brutalist/terminal sesuai referensi.
+Perbaikan pada v1.2.0:
+- Memblokir domain iklan/pop-under/smartlink (seperti `honmia.com` dan pola `/4/<hash>`) agar tidak pernah dijadikan hasil link tujuan ketika memproses `bicolink.com`.
+- Menghapus scan URL acak di body HTML yang rawan menyambar link iklan saat link tujuan aslinya belum terbuka.
