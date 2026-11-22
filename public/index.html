@@ -3,27 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Noxis Bypass Link</title>
+  <title>Noxis React Ch</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-grid: #f8f7f3;
-      --grid-line: rgba(17, 17, 17, 0.08);
+      --bg: #fdfbf7;
       --surface: #ffffff;
-      --ink: #111111;
-      --muted: #525252;
-      --yellow: #ffd000;
-      --yellow-dark: #f2c300;
-      --orange: #ff5500;
-      --orange-dark: #e24900;
-      --cyan: #00d2ff;
-      --lime: #9eff00;
+      --orange: #ff4500;
+      --orange-hover: #e03d00;
+      --yellow: #ffcc00;
       --green: #00e676;
+      --blue: #00b0ff;
       --red: #ff3d00;
-      --border: 2.5px solid #111111;
-      --shadow: 5px 5px 0px #111111;
+      --ink: #111111;
+      --border: 4px solid #111111;
+      --shadow: 6px 6px 0px #111111;
       --shadow-sm: 3px 3px 0px #111111;
     }
 
@@ -33,785 +29,559 @@
       padding: 0;
     }
 
-    #splash-loader {
+    #loading-screen {
       position: fixed;
-      inset: 0;
-      background-color: var(--bg-grid);
-      background-image:
-        linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
-      background-size: 24px 24px;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg);
+      background-image: radial-gradient(#111111 1.2px, transparent 1.2px);
+      background-size: 28px 28px;
       display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: center;
+      align-items: center;
       z-index: 9999;
-      transition: opacity 0.4s ease, visibility 0.4s ease;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
     }
 
-    #splash-loader.done {
-      opacity: 0;
-      visibility: hidden;
-    }
-
-    .loader-card {
-      width: min(350px, 90vw);
+    .loading-container {
+      width: 320px;
       background: var(--surface);
       border: var(--border);
-      border-radius: 14px;
       box-shadow: var(--shadow);
-      padding: 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      animation: popIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1);
-    }
-
-    .loader-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .loader-badge {
-      background: var(--yellow);
-      border: 2px solid var(--ink);
-      border-radius: 6px;
-      padding: 2px 8px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      font-weight: 800;
-      box-shadow: 2px 2px 0px var(--ink);
-    }
-
-    .loader-pct {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.85rem;
-      font-weight: 800;
-    }
-
-    .loader-heading {
-      font-size: 1.2rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-
-    .loader-track {
-      width: 100%;
-      height: 15px;
-      background: #eceae3;
-      border: 2px solid var(--ink);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .loader-fill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, var(--orange), var(--yellow));
-      transition: width 0.1s linear;
-    }
-
-    .loader-caption {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.73rem;
-      color: var(--muted);
-    }
-
-    @keyframes popIn {
-      from {
-        opacity: 0;
-        transform: translateY(12px) scale(0.98);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    body {
-      min-height: 100vh;
-      background-color: var(--bg-grid);
-      background-image:
-        linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
-      background-size: 24px 24px;
-      color: var(--ink);
-      font-family: 'Space Grotesk', sans-serif;
-      padding: 28px 16px 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .wrap {
-      width: 100%;
-      max-width: 720px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      animation: popIn 0.45s ease-out;
-    }
-
-    .kicker-pill {
-      display: inline-flex;
-      align-items: center;
-      width: fit-content;
-      background: var(--yellow);
-      border: 2px solid var(--ink);
-      border-radius: 6px;
-      padding: 3px 10px;
-      box-shadow: 2px 2px 0px var(--ink);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    .title-block {
-      font-size: clamp(2.2rem, 5vw, 3.1rem);
-      font-weight: 800;
-      line-height: 1.06;
-      letter-spacing: -0.03em;
-      color: var(--ink);
-    }
-
-    .title-accent {
-      display: inline-block;
-      background: var(--orange);
-      color: #ffffff;
-      border: 2.5px solid var(--ink);
-      border-radius: 8px;
-      padding: 2px 14px 5px;
-      margin-top: 4px;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .sub-caption {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
-      color: var(--muted);
-    }
-
-    .main-box {
-      margin-top: 8px;
-      background: var(--surface);
-      border: var(--border);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      padding: 20px;
+      padding: 28px;
+      text-align: center;
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
 
-    .engine-strip {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      background: #faf9f6;
-      border: 2px solid var(--ink);
-      border-radius: 10px;
-      padding: 10px 14px;
-    }
-
-    .engine-strip-title {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.78rem;
+    .loading-title {
+      font-size: 1.4rem;
       font-weight: 800;
-      letter-spacing: 0.04em;
-    }
-
-    .engine-badge {
-      background: #141414;
-      color: var(--lime);
-      border: 2px solid var(--ink);
-      border-radius: 7px;
-      padding: 4px 12px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.78rem;
-      font-weight: 800;
-      transition: background-color 0.2s ease, color 0.2s ease;
-    }
-
-    .engine-badge.sfl {
-      background: var(--orange);
-      color: #ffffff;
-    }
-
-    .engine-badge.bico {
-      background: var(--cyan);
-      color: var(--ink);
-    }
-
-    .field-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-
-    .field-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.78rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
       text-transform: uppercase;
+      letter-spacing: -0.5px;
     }
 
-    .field-tag {
-      background: #fff3c4;
-      border: 2px solid var(--ink);
-      border-radius: 6px;
-      padding: 2px 8px;
+    .loading-bar-wrapper {
+      width: 100%;
+      height: 16px;
+      background: #eee;
+      border: 3px solid #111;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .loading-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--orange);
+      transition: width 0.1s linear;
+    }
+
+    .loading-percentage {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
       font-weight: 800;
+      font-size: 0.95rem;
     }
 
-    .input-box {
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulseBadge {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: radial-gradient(#111111 1.2px, transparent 1.2px);
+      background-size: 28px 28px;
+      color: var(--ink);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      opacity: 0;
+      transition: opacity 0.4s ease-in;
+    }
+
+    body.loaded {
+      opacity: 1;
+    }
+
+    header {
+      background: var(--orange);
+      border-bottom: var(--border);
+      padding: 24px 32px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 4px 0px #111111;
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
-      background: #ffffff;
-      border: 2.2px solid var(--ink);
-      border-radius: 11px;
-      padding: 6px 6px 6px 14px;
+      gap: 14px;
+    }
+
+    .brand-badge {
+      background: var(--yellow);
+      border: var(--border);
+      box-shadow: var(--shadow-sm);
+      padding: 8px 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 1rem;
+      animation: pulseBadge 2.5s infinite ease-in-out;
+    }
+
+    .brand-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #ffffff;
+      text-shadow: 3px 3px 0px #111111;
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+    }
+
+    .channel-btn {
+      background: var(--yellow);
+      color: var(--ink);
+      border: var(--border);
+      box-shadow: var(--shadow-sm);
+      padding: 10px 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      font-weight: 800;
+      text-decoration: none;
+      text-transform: uppercase;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
-    .input-box:focus-within {
-      transform: translate(-1px, -1px);
-      box-shadow: 3px 3px 0px var(--ink);
-    }
-
-    .url-field {
-      flex: 1;
-      min-width: 0;
-      border: none;
-      outline: none;
-      background: transparent;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.92rem;
-      font-weight: 700;
-      color: var(--ink);
-      padding: 8px 4px;
-    }
-
-    .url-field::placeholder {
-      color: #8c8c8c;
-    }
-
-    .paste-btn {
-      background: var(--yellow);
-      border: 2px solid var(--ink);
-      border-radius: 8px;
-      padding: 9px 14px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.76rem;
-      font-weight: 800;
-      color: var(--ink);
-      cursor: pointer;
-      box-shadow: 2px 2px 0px var(--ink);
-      transition: transform 0.1s ease, background-color 0.1s ease;
-    }
-
-    .paste-btn:hover {
-      background: var(--yellow-dark);
-      transform: translate(-1px, -1px);
-    }
-
-    .gass-btn {
-      margin-top: 12px;
-      width: 100%;
-      height: 50px;
-      background: var(--orange);
-      color: #ffffff;
-      border: 2.5px solid var(--ink);
-      border-radius: 11px;
-      box-shadow: var(--shadow-sm);
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 1rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
-    }
-
-    .gass-btn:hover:not(:disabled) {
-      background: var(--orange-dark);
+    .channel-btn:hover {
       transform: translate(-2px, -2px);
-      box-shadow: 5px 5px 0px var(--ink);
+      box-shadow: 5px 5px 0px #111111;
     }
 
-    .gass-btn:active:not(:disabled) {
-      transform: translate(1px, 1px);
-      box-shadow: 2px 2px 0px var(--ink);
-    }
-
-    .gass-btn:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
-    }
-
-    .logs-section {
+    main {
+      width: 100%;
+      max-width: 860px;
+      margin: 40px auto;
+      padding: 0 20px;
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      padding-top: 4px;
+      gap: 32px;
+      animation: fadeInUp 0.6s ease-out;
     }
 
-    .logs-card {
-      background: #141414;
-      color: #f5f5f5;
-      border: 2.5px solid var(--ink);
-      border-radius: 12px;
-      padding: 14px 16px;
-      box-shadow: var(--shadow-sm);
-      font-family: 'JetBrains Mono', monospace;
+    .card {
+      background: var(--surface);
+      border: var(--border);
+      box-shadow: var(--shadow);
+      padding: 34px;
+      border-radius: 6px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .logs-header {
+    .card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 8px 8px 0px #111111;
+    }
+
+    .card-header {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      padding-bottom: 10px;
-      margin-bottom: 10px;
-      border-bottom: 1.5px dashed #383838;
-    }
-
-    .logs-title {
-      font-size: 0.78rem;
-      font-weight: 800;
-      color: var(--yellow);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    .logs-meta {
-      display: flex;
       align-items: center;
-      gap: 8px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 3px solid #111111;
     }
 
-    .ms-pill {
-      background: #232323;
-      color: var(--cyan);
-      border: 1.5px solid #444444;
-      border-radius: 6px;
-      padding: 3px 9px;
-      font-size: 0.75rem;
+    .card-title {
+      font-size: 1.3rem;
       font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: -0.3px;
     }
 
-    .state-pill {
-      background: #232323;
-      color: var(--lime);
-      border: 1.5px solid #444444;
-      border-radius: 6px;
-      padding: 3px 9px;
-      font-size: 0.75rem;
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .input-label {
       font-weight: 800;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
 
-    .logs-console {
-      font-size: 0.8rem;
-      line-height: 1.55;
-      color: #dcdcdc;
-      white-space: pre-wrap;
-      word-break: break-all;
-      max-height: 180px;
+    .neo-input {
+      width: 100%;
+      height: 60px;
+      padding: 0 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      background: var(--bg);
+      border: var(--border);
+      color: var(--ink);
+      outline: none;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+    }
+
+    .neo-input:focus {
+      background: #ffffff;
+      transform: translate(-3px, -3px);
+      box-shadow: 6px 6px 0px #111111;
+    }
+
+    .emoji-picker-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .emoji-pill {
+      background: var(--yellow);
+      border: var(--border);
+      box-shadow: var(--shadow-sm);
+      padding: 8px 14px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .emoji-pill:hover {
+      background: #ffd500;
+      transform: translate(-2px, -2px);
+      box-shadow: 5px 5px 0px #111111;
+    }
+
+    .btn-action {
+      margin-top: 10px;
+      width: 100%;
+      height: 62px;
+      background: var(--orange);
+      color: #ffffff;
+      border: var(--border);
+      box-shadow: var(--shadow);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+
+    .btn-action:hover:not(:disabled) {
+      background: var(--orange-hover);
+      transform: translate(-3px, -3px);
+      box-shadow: 9px 9px 0px #111111;
+    }
+
+    .btn-action:active:not(:disabled) {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px #111111;
+    }
+
+    .btn-action:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: #888888;
+    }
+
+    .logs-box {
+      background: #141414;
+      color: #f8f8f2;
+      border: var(--border);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      font-family: 'JetBrains Mono', monospace;
+      border-radius: 4px;
+      max-height: 320px;
       overflow-y: auto;
     }
 
-    .result-card {
+    .logs-top {
       display: flex;
-      background: #faf9f6;
-      color: var(--ink);
-      border: 2.5px solid var(--ink);
-      border-radius: 12px;
-      padding: 14px 16px;
-      box-shadow: var(--shadow-sm);
-      flex-direction: column;
-      gap: 10px;
-      transition: background-color 0.2s ease;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #333333;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
     }
 
-    .result-card.ready {
-      background: var(--green);
-    }
-
-    .result-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+    .logs-heading {
       font-weight: 800;
+      font-size: 0.95rem;
+      color: var(--yellow);
       text-transform: uppercase;
-      letter-spacing: 0.04em;
     }
 
-    .result-url-box {
-      background: #ffffff;
-      border: 2px solid var(--ink);
-      border-radius: 8px;
-      padding: 10px 12px;
+    .log-content {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .error-alert {
+      background: var(--red);
+      color: #ffffff;
+      border: var(--border);
+      box-shadow: var(--shadow-sm);
+      padding: 14px 18px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.84rem;
-      font-weight: 800;
-      color: var(--ink);
-      word-break: break-all;
-    }
-
-    .result-url-box.empty {
-      color: #7a7a7a;
+      font-size: 0.9rem;
       font-weight: 700;
+      display: none;
+      margin-top: 16px;
     }
 
-    .result-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .act-btn {
-      background: var(--yellow);
-      color: var(--ink);
-      border: 2px solid var(--ink);
-      border-radius: 8px;
-      padding: 7px 14px;
+    .success-alert {
+      background: var(--green);
+      color: #111111;
+      border: var(--border);
+      box-shadow: var(--shadow-sm);
+      padding: 14px 18px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.76rem;
-      font-weight: 800;
-      text-decoration: none;
-      cursor: pointer;
-      box-shadow: 2px 2px 0px var(--ink);
+      font-size: 0.9rem;
+      font-weight: 700;
+      display: none;
+      margin-top: 16px;
     }
 
-    .act-btn.open {
-      background: var(--cyan);
-    }
-
-    .act-btn.disabled-link {
-      opacity: 0.5;
-      pointer-events: none;
-    }
-
-    .bottom-mark {
+    footer {
+      background: var(--surface);
+      border-top: var(--border);
+      padding: 26px;
       text-align: center;
+      box-shadow: 0 -4px 0px #111111;
+    }
+
+    .footer-main {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .footer-sub {
+      margin-top: 8px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.76rem;
-      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--orange);
     }
   </style>
 </head>
 <body>
 
-  <!-- Loading Awal Saat Buka Web -->
-  <div id="splash-loader">
-    <div class="loader-card">
-      <div class="loader-top">
-        <span class="loader-badge">NOXIS</span>
-        <span class="loader-pct" id="splashPct">0%</span>
+  <div id="loading-screen">
+    <div class="loading-container">
+      <div class="loading-title">Noxis React Ch</div>
+      <div class="loading-bar-wrapper">
+        <div class="loading-bar-fill" id="loadingBarFill"></div>
       </div>
-      <div class="loader-heading">Noxis Bypass Link...</div>
-      <div class="loader-track">
-        <div class="loader-fill" id="splashBar"></div>
-      </div>
-      <div class="loader-caption" id="splashCaption">Menyiapkan modul Safelinku, BicoLink, Linkvertise &amp; Social...</div>
+      <div class="loading-percentage" id="loadingPercentage">0%</div>
     </div>
   </div>
 
-  <div class="wrap">
-    <div class="kicker-pill">NOXIS</div>
+  <header>
+    <div class="brand">
+      <div class="brand-badge">NOXIS</div>
+      <div class="brand-title">Noxis React Ch</div>
+    </div>
+    <a href="https://whatsapp.com/channel/0029Vb82nkLEwEjtLSQ49I44" target="_blank" rel="noopener noreferrer" class="channel-btn">Saluran WA</a>
+  </header>
 
-    <h1 class="title-block">
-      Noxis<br />
-      <span class="title-accent">Bypass Link</span>
-    </h1>
-    <p class="sub-caption">auto detect sfl.gl / khaddavi, bicolink, linkvertise &amp; social • cepat &amp; langsung</p>
-
-    <main class="main-box">
-      <div class="engine-strip">
-        <span class="engine-strip-title">ENGINE:</span>
-        <span class="engine-badge" id="engineStatus">Auto-Detect</span>
+  <main>
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">Kirim Auto Reaction</span>
+        <span style="font-family:'JetBrains Mono'; font-weight:800; font-size:0.85rem; background:#ffcc00; border:2px solid #111; padding:4px 10px; box-shadow:2px 2px 0px #111;">VIP MULTI-KEY</span>
       </div>
 
-      <div>
-        <div class="field-header">
-          <span class="field-label">PASTE LENK NYA</span>
-          <span class="field-tag">URL..</span>
-        </div>
-
-        <form id="formBypass">
-          <div class="input-box">
-            <input
-              type="url"
-              id="linkInput"
-              class="url-field"
-              placeholder="url.."
-              required
-              autocomplete="off"
-              oninput="detectHost()"
-            />
-            <button type="button" class="paste-btn" id="btnPaste">PASTE</button>
-          </div>
-
-          <button type="submit" class="gass-btn" id="btnGass">
-            <span>GASS</span>
-            <span>&darr;</span>
-          </button>
-        </form>
+      <div class="input-group">
+        <label class="input-label" for="channelUrl">URL Post WhatsApp Channel</label>
+        <input
+          type="url"
+          id="channelUrl"
+          class="neo-input"
+          placeholder="https://whatsapp.com/channel/0029VbDyL6d9RZAh3JjEM325/158"
+          autocomplete="off"
+        />
       </div>
 
-      <!-- Kolom Logs (MS Berjalan Real-time & Status) + Kolom Hasil URL -->
-      <div class="logs-section">
-        <div class="logs-card">
-          <div class="logs-header">
-            <span class="logs-title">LOGS</span>
-            <div class="logs-meta">
-              <span class="ms-pill" id="msBadge">0 MS</span>
-              <span class="state-pill" id="stateBadge">IDLE</span>
-            </div>
-          </div>
-          <div class="logs-console" id="logsConsole">Menunggu input URL Safelinku (sfl.gl / khaddavi), BicoLink, Linkvertise, atau Social Unlock...</div>
+      <div class="input-group">
+        <label class="input-label" for="emojiInput">Pilih atau Ketik Emoji (Maks 5, pisah koma)</label>
+        <div class="emoji-picker-row">
+          <button type="button" class="emoji-pill" onclick="addEmoji('👍')">👍</button>
+          <button type="button" class="emoji-pill" onclick="addEmoji('❤️')">❤️</button>
+          <button type="button" class="emoji-pill" onclick="addEmoji('🔥')">🔥</button>
+          <button type="button" class="emoji-pill" onclick="addEmoji('😂')">😂</button>
+          <button type="button" class="emoji-pill" onclick="addEmoji('💦')">💦</button>
+          <button type="button" class="emoji-pill" onclick="addEmoji('🚀')">🚀</button>
+          <button type="button" class="emoji-pill" onclick="addEmoji('🎉')">🎉</button>
+          <button type="button" class="emoji-pill" onclick="addEmoji('👏')">👏</button>
         </div>
-
-        <div class="result-card" id="resultCard">
-          <span class="result-label">HASIL URL</span>
-          <div class="result-url-box empty" id="resultUrlText">-</div>
-          <div class="result-actions">
-            <button type="button" class="act-btn" id="btnCopyUrl">SALIN URL</button>
-            <a href="#" target="_blank" rel="noopener noreferrer" class="act-btn open disabled-link" id="btnOpenUrl">BUKA URL</a>
-          </div>
-        </div>
+        <input
+          type="text"
+          id="emojiInput"
+          class="neo-input"
+          placeholder="👍 atau 💦,👍"
+          autocomplete="off"
+        />
       </div>
-    </main>
 
-    <div class="bottom-mark">Noxis Bypass Link</div>
-  </div>
+      <button type="button" class="btn-action" id="btnSend" onclick="sendReaction()">Kirim Reaction Sekarang</button>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">Console & Status Eksekusi</span>
+      </div>
+
+      <div class="logs-box">
+        <div class="logs-top">
+          <span class="logs-heading">System Output</span>
+          <span style="font-family:'JetBrains Mono'; font-size:0.85rem; color:#00e676;" id="statusBadge">IDLE</span>
+        </div>
+        <div class="log-content" id="logContent">Sistem siap menerima perintah. Masukkan URL dan emoji di atas...</div>
+      </div>
+
+      <div class="error-alert" id="errorBox"></div>
+      <div class="success-alert" id="successBox"></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-main">Website ini dibuat oleh King Noxis Lua yang ganteng</div>
+    <div class="footer-sub">Noxis React Ch Engine v2.0</div>
+  </footer>
 
   <script>
-    // Animasi loading awal saat buka web
     window.addEventListener("DOMContentLoaded", () => {
-      const loader = document.getElementById("splash-loader");
-      const bar = document.getElementById("splashBar");
-      const pct = document.getElementById("splashPct");
-      const caption = document.getElementById("splashCaption");
+      let progress = 0;
+      const fill = document.getElementById("loadingBarFill");
+      const text = document.getElementById("loadingPercentage");
+      const screen = document.getElementById("loading-screen");
 
-      const notes = [
-        "Menyiapkan modul Safelinku & BicoLink...",
-        "Memuat antarmuka Noxis Bypass Link...",
-        "Mengaktifkan deteksi otomatis host...",
-        "Siap digunakan."
-      ];
-
-      let val = 0;
-      const timer = setInterval(() => {
-        val += Math.floor(Math.random() * 18) + 10;
-        if (val >= 100) {
-          val = 100;
-          clearInterval(timer);
-          bar.style.width = "100%";
-          pct.textContent = "100%";
-          caption.textContent = notes[notes.length - 1];
+      const interval = setInterval(() => {
+        progress += Math.floor(Math.random() * 18) + 8;
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(interval);
+          fill.style.width = "100%";
+          text.textContent = "100%";
           setTimeout(() => {
-            loader.classList.add("done");
-          }, 240);
+            screen.style.opacity = "0";
+            screen.style.visibility = "hidden";
+            document.body.classList.add("loaded");
+          }, 300);
         } else {
-          bar.style.width = val + "%";
-          pct.textContent = val + "%";
-          const idx = Math.min(notes.length - 1, Math.floor((val / 100) * notes.length));
-          caption.textContent = notes[idx];
+          fill.style.width = progress + "%";
+          text.textContent = progress + "%";
         }
       }, 50);
     });
 
-    function detectHost() {
-      const raw = document.getElementById("linkInput").value.trim();
-      const badge = document.getElementById("engineStatus");
-      badge.className = "engine-badge";
-
-      if (!raw) {
-        badge.textContent = "Auto-Detect";
-        return null;
-      }
-
-      try {
-        const normalized = /^https?:\/\//i.test(raw) ? raw : "https://" + raw;
-        const host = new URL(normalized).hostname.toLowerCase();
-
-        if (/(^|\.)(sfl\.gl|(khadd?avi)\.(com|net))$/.test(host)) {
-          badge.textContent = "Safelinku (mgvt)";
-          badge.classList.add("sfl");
-          return "mgvt";
-        }
-        if (/(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net)$/.test(host)) {
-          badge.textContent = "Bico Engine (umpc)";
-          badge.classList.add("bico");
-          return "umpc";
-        }
-        if (/(^|\.)(linkvertise\.(com|net|download)|link-to\.net|file-link\.net|direct-link\.net)$/.test(host)) {
-          badge.textContent = "Linkvertise (lv)";
-          badge.classList.add("bico");
-          return "lv";
-        }
-        if (/(^|\.)(rekonise\.com|sub2unlock\.(com|net)|ytsubme\.com|sub4unlock\.(io|com|co|net|org|me)|unlocknow\.net|sub2get\.com|subfinal\.com|mboost\.me|social-unlock\.com|socialwolvez\.com|paster\.(so|gg)|cuty\.io|adfoc\.us|mendationforc\.info)$/.test(host)) {
-          badge.textContent = "Social Unlock (social)";
-          badge.classList.add("bico");
-          return "social";
-        }
-        badge.textContent = "Host Tidak Dikenal";
-        return null;
-      } catch {
-        badge.textContent = "URL Tidak Valid";
-        return null;
+    function addEmoji(emoji) {
+      const input = document.getElementById("emojiInput");
+      const current = input.value.trim();
+      if (!current) {
+        input.value = emoji;
+      } else {
+        input.value = current + ", " + emoji;
       }
     }
 
-    const linkInput = document.getElementById("linkInput");
-    const btnPaste = document.getElementById("btnPaste");
-    const formBypass = document.getElementById("formBypass");
-    const btnGass = document.getElementById("btnGass");
-    const msBadge = document.getElementById("msBadge");
-    const stateBadge = document.getElementById("stateBadge");
-    const logsConsole = document.getElementById("logsConsole");
-    const resultCard = document.getElementById("resultCard");
-    const resultUrlText = document.getElementById("resultUrlText");
-    const btnCopyUrl = document.getElementById("btnCopyUrl");
-    const btnOpenUrl = document.getElementById("btnOpenUrl");
+    async function sendReaction() {
+      const url = document.getElementById("channelUrl").value.trim();
+      const reaction = document.getElementById("emojiInput").value.trim();
+      const btn = document.getElementById("btnSend");
+      const log = document.getElementById("logContent");
+      const statusBadge = document.getElementById("statusBadge");
+      const errorBox = document.getElementById("errorBox");
+      const successBox = document.getElementById("successBox");
 
-    let msTicker = null;
+      errorBox.style.display = "none";
+      successBox.style.display = "none";
 
-    function startMsCounter(t0) {
-      stopMsCounter();
-      msBadge.textContent = "0 MS";
-      msTicker = setInterval(() => {
-        const currentMs = Math.round(performance.now() - t0);
-        msBadge.textContent = `${currentMs} MS`;
-      }, 45);
-    }
-
-    function stopMsCounter(finalMs) {
-      if (msTicker) {
-        clearInterval(msTicker);
-        msTicker = null;
-      }
-      if (typeof finalMs === "number") {
-        msBadge.textContent = `${finalMs} MS`;
-      }
-    }
-
-    btnPaste.addEventListener("click", async () => {
-      try {
-        const txt = await navigator.clipboard.readText();
-        if (txt) {
-          linkInput.value = txt.trim();
-          detectHost();
-          linkInput.focus();
-        }
-      } catch {
-        linkInput.focus();
-      }
-    });
-
-    formBypass.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const raw = linkInput.value.trim();
-      if (!raw) return;
-
-      const targetUrl = /^https?:\/\//i.test(raw) ? raw : "https://" + raw;
-      const engine = detectHost();
-      const timeNow = new Date().toLocaleTimeString();
-
-      resultCard.classList.remove("ready");
-      resultUrlText.textContent = "-";
-      resultUrlText.classList.add("empty");
-      btnOpenUrl.href = "#";
-      btnOpenUrl.classList.add("disabled-link");
-
-      if (!engine) {
-        stopMsCounter(0);
-        stateBadge.textContent = "ERROR";
-        stateBadge.style.color = "#ff3d00";
-        logsConsole.textContent = `[${timeNow}] Domain tidak didukung.
-Hanya mendukung Safelinku (sfl.gl / khaddavi), BicoLink / BicoSafe, Linkvertise, dan Social Unlock.`;
+      if (!url || !reaction) {
+        errorBox.textContent = "URL Channel WhatsApp dan Emoji wajib diisi!";
+        errorBox.style.display = "block";
         return;
       }
 
-      btnGass.disabled = true;
-      btnGass.innerHTML = "<span>PROSES...</span>";
-      stateBadge.textContent = "RUNNING";
-      stateBadge.style.color = "#ffd000";
-      logsConsole.textContent = `[${timeNow}] Memulai bypass...
-Target : ${targetUrl}
-Engine : ${engine}`;
-
-      const t0 = performance.now();
-      startMsCounter(t0);
+      btn.disabled = true;
+      btn.textContent = "Mengirim...";
+      statusBadge.textContent = "PROCESSING";
+      statusBadge.style.color = "#ffcc00";
+      log.textContent = `[${new Date().toLocaleTimeString()}] Mengirim request reaction ke server...\nTarget: ${url}\nEmoji: ${reaction}`;
 
       try {
-        const res = await fetch(`/api/${engine}?url=${encodeURIComponent(targetUrl)}`);
+        const res = await fetch("/api/react", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url, reaction })
+        });
+
         const rawText = await res.text();
-        let data = null;
+        let data;
         try {
           data = JSON.parse(rawText);
         } catch {
-          const cleanSnippet = rawText.replace(/\s+/g, " ").trim().slice(0, 180);
-          throw new Error(`HTTP ${res.status}: ${cleanSnippet || "Respon bukan JSON"}`);
+          throw new Error(`Respons server bukan JSON valid (HTTP ${res.status}): ${rawText.slice(0, 160)}`);
         }
-        const elapsed = typeof data.execution_time_ms === "number" ? data.execution_time_ms : Math.round(performance.now() - t0);
-        stopMsCounter(elapsed);
 
-        if (data.status && data.data && data.data.bypassed_url) {
-          const finalUrl = data.data.bypassed_url;
-          stateBadge.textContent = "SUCCESS";
-          stateBadge.style.color = "#00e676";
-          logsConsole.textContent += `
-[${new Date().toLocaleTimeString()}] Selesai dalam ${elapsed} ms.
-Host Tujuan: ${data.data.host || "-"}
-Status: Berhasil diekstrak.`;
-
-          resultUrlText.textContent = finalUrl;
-          resultUrlText.classList.remove("empty");
-          btnOpenUrl.href = finalUrl;
-          btnOpenUrl.classList.remove("disabled-link");
-          resultCard.classList.add("ready");
+        if (res.ok && data.status) {
+          statusBadge.textContent = "SUCCESS";
+          statusBadge.style.color = "#00e676";
+          successBox.textContent = `Berhasil! ${data.message || "Reaction terkirim."} (Waktu: ${data.time || "-"})`;
+          successBox.style.display = "block";
+          log.textContent += `\n\n[SUCCESS] Response:\n${JSON.stringify(data, null, 2)}`;
         } else {
-          stateBadge.textContent = "FAILED";
-          stateBadge.style.color = "#ff3d00";
-          logsConsole.textContent += `
-[${new Date().toLocaleTimeString()}] Gagal (${elapsed} ms).
-Error: ${data.error || "Terjadi kesalahan pada server."}`;
+          statusBadge.textContent = "FAILED";
+          statusBadge.style.color = "#ff3d00";
+          errorBox.textContent = `Gagal: ${data.error || `HTTP ${res.status}`}`;
+          errorBox.style.display = "block";
+          log.textContent += `\n\n[ERROR] Response:\n${JSON.stringify(data, null, 2)}`;
         }
       } catch (err) {
-        const elapsed = Math.round(performance.now() - t0);
-        stopMsCounter(elapsed);
-        stateBadge.textContent = "ERROR";
-        stateBadge.style.color = "#ff3d00";
-        logsConsole.textContent += `
-[${new Date().toLocaleTimeString()}] Network Error (${elapsed} ms): ${err.message}`;
+        statusBadge.textContent = "ERROR";
+        statusBadge.style.color = "#ff3d00";
+        const msg = err && err.message ? err.message : String(err);
+        errorBox.textContent = `Network Error: ${msg}`;
+        errorBox.style.display = "block";
+        log.textContent += `\n\n[EXCEPTION] ${msg}`;
       } finally {
-        btnGass.disabled = false;
-        btnGass.innerHTML = "<span>GASS</span><span>&darr;</span>";
+        btn.disabled = false;
+        btn.textContent = "Kirim Reaction Sekarang";
       }
-    });
-
-    btnCopyUrl.addEventListener("click", async () => {
-      const txt = resultUrlText.textContent.trim();
-      if (!txt || txt === "-") return;
-      try {
-        await navigator.clipboard.writeText(txt);
-        const old = btnCopyUrl.textContent;
-        btnCopyUrl.textContent = "TERSALIN";
-        setTimeout(() => (btnCopyUrl.textContent = old), 1200);
-      } catch {}
-    });
+    }
   </script>
 </body>
 </html>
