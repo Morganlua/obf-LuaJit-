@@ -6,24 +6,30 @@ const lv = require("./lv");
 const social = require("./social");
 
 const ENGINES = {
-  mgvt: { run: (u, o) => mgvt.bypass(u, o) },
-  umpc: { run: (u, o) => umpc.bypass(u, o) },
-  lv: { run: (u, o) => lv.bypass(u, o) },
-  social: { run: (u, o) => social.bypass(u, o) },
+  mgvt: { label: "MGVT (SafelinkU / SFL)", run: (u, o) => mgvt.bypass(u, o) },
+  umpc: { label: "UMPC (Bicolink)", run: (u, o) => umpc.bypass(u, o) },
+  lv: { label: "LV (Linkvertise)", run: (u, o) => lv.bypass(u, o) },
+  social: { label: "SOCIAL (Social Unlock)", run: (u, o) => social.bypass(u, o) },
 };
 
 const HOSTS = [
   { test: /(^|\.)(sfl\.gl|(khadd?avi)\.(com|net))$/i, engine: "mgvt" },
   { test: /(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net)$/i, engine: "umpc" },
   { test: /(^|\.)(linkvertise\.(com|net|download)|link-to\.net|file-link\.net|direct-link\.net)$/i, engine: "lv" },
-  { test: /(^|\.)(rekonise\.com|sub2unlock\.(com|net)|ytsubme\.com|sub4unlock\.(io|com|co|net|org|me)|unlocknow\.net|sub2get\.com|subfinal\.com|mboost\.me|social-unlock\.com|socialwolvez\.com|paster\.(so|gg)|cuty\.io|adfoc\.us|mendationforc\.info)$/i, engine: "social" },
+  {
+    test: /(^|\.)(rekonise\.com|sub2unlock\.(com|net)|ytsubme\.com|sub4unlock\.(io|com|co|net|org|me)|unlocknow\.net|sub2get\.com|subfinal\.com|mboost\.me|social-unlock\.com|socialwolvez\.com|paster\.(so|gg)|cuty\.io|adfoc\.us|mendationforc\.info)$/i,
+    engine: "social",
+  },
 ];
 
 function pickEngine(url) {
   let host = "";
   try {
-    host = new URL(url).hostname;
-  } catch (e) {
+    const normalized = /^https?:\/\//i.test(String(url || "").trim())
+      ? String(url || "").trim()
+      : "https://" + String(url || "").trim();
+    host = new URL(normalized).hostname;
+  } catch {
     return null;
   }
   const hit = HOSTS.find((e) => e.test.test(host));
@@ -31,8 +37,8 @@ function pickEngine(url) {
 }
 
 async function resolveRequest(req) {
-  const u = new URL(req.url, `http://${req.headers.host || "localhost"}`);
-  const target = u.searchParams.get("url");
+  const u = new URL(req.url, `http://${(req.headers && req.headers.host) || "localhost"}`);
+  const target = u.searchParams.get("url") || "";
   const forced = u.searchParams.get("engine") || "";
   const engine = forced && ENGINES[forced] ? forced : target ? pickEngine(target) : null;
 
@@ -42,7 +48,7 @@ async function resolveRequest(req) {
       payload: {
         status: false,
         error: "Parameter url wajib diisi.",
-        engines: ["mgvt", "umpc", "lv", "social"],
+        engines: Object.keys(ENGINES),
       },
     };
   }
@@ -58,9 +64,23 @@ async function resolveRequest(req) {
 
   try {
     const result = await ENGINES[engine].run(target, {});
-    return { status: result.status ? 200 : 502, payload: result };
+    return {
+      status: result.status ? 200 : 502,
+      payload: {
+        ...result,
+        engine,
+        engine_label: ENGINES[engine].label,
+      },
+    };
   } catch (e) {
-    return { status: 500, payload: { status: false, error: (e && e.message) || "Internal error" } };
+    return {
+      status: 500,
+      payload: {
+        status: false,
+        engine,
+        error: (e && e.message) || "Internal error",
+      },
+    };
   }
 }
 

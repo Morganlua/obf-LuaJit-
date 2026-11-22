@@ -45,8 +45,6 @@ const bersih = (u) => {
   }
 };
 
-const _kx = crypto;
-
 const _s0 = "xq9-sfl-\u03df7";
 const _h1 = "2796dc0f3760aecb";
 const _h2 = "956ddc012926128b";
@@ -168,7 +166,7 @@ function makeClient() {
         headers,
         body,
         redirect: "manual",
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(25000),
       });
     } catch (e) {
       throw new SflError("Gagal terhubung ke " + u.host + ".", rawOf(e));
@@ -393,5 +391,4 @@ async function directHandler(req, res) {
 }
 
 module.exports = { bypass, CREDIT, directHandler };
-
 module.exports.default = directHandler;

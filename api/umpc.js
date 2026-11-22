@@ -1,682 +1,355 @@
 "use strict";
 
-const { spawn, spawnSync } = require("node:child_process");
-
-const CREDIT = {
-  author_skrep: "JH a.k.a Dhika",
-  kesayangan: "Fiony Alveria\u2661",
-  scraper: "JAMVANHAX0R",
-};
-
 const UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-const MAX_REDIRECTS = 10;
-const MAX_PASSES = 15;
-const GO_FORM_DELAY_MS = 3000;
-const PER_REQUEST_CAP_MS = 45000;
-const DEFAULT_TIMEOUT_MS = 90000;
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
-const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+const BICO_HOST_RE =
+  /(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net)$/i;
 
-async function directHandler(req, res) {
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.setHeader("Cache-Control", "no-store");
-  try {
-    const rawUrl = (req && req.url) || "/";
-    const target = new URL(rawUrl, "http://localhost").searchParams.get("url") || "";
-    const result = await bypassBicolink(target, {});
-    res.statusCode = result.status ? 200 : 502;
-    res.end(JSON.stringify(result));
-  } catch (err) {
-    res.statusCode = 502;
-    res.end(JSON.stringify({
-      status: false,
-      author_skrep: CREDIT.author_skrep,
-      source: "bicolink",
-      data: null,
-      error: (err && err.message) || "Gagal memproses request BicoLink."
-    }));
-  }
-}
+const SKIP_HOST_RE =
+  /(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net|google\.com|googleapis\.com|gstatic\.com|cloudflare\.com|cloudflareinsights\.com|jquery\.com|bootstrap\.com|bootstrapcdn\.com|fontawesome\.com|jsdelivr\.net|unpkg\.com|w3\.org|googletagmanager\.com|google-analytics\.com|facebook\.com|twitter\.com|x\.com|instagram\.com|youtube\.com|youtu\.be|tiktok\.com|discord\.com|discord\.gg)$/i;
 
-function assertBicolink(url) {
-  let host = "";
-  try {
-    host = new URL(url).hostname;
-  } catch (e) {
-    throw new Error("URL tidak valid.");
-  }
-  if (!/(^|\.)(bicolink\.com|bico\.link|bicosafe\.com|bicolink\.net|bclnk\.net)$/i.test(host)) {
-    throw new Error(`Host ${host} bukan bicolink. Engine umpc hanya menerima bicolink.com, bico.link, bicosafe.com, bicolink.net, bclnk.net.`);
-  }
-}
-
-function nonceAnswer(nonce) {
-  let sum = 0;
-  for (let i = 0; i < nonce.length; i++) {
-    sum = (sum * 31 + nonce.charCodeAt(i) + i) % 1000000007;
-  }
-  return sum.toString(36);
-}
-
-function decodeEntities(s) {
-  return s
+function decodeEntities(str) {
+  return String(str || "")
     .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&#(\d+);/g, (_, d) => String(fromCodePointSafe(d)))
     .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
+    .replace(/&#39;|&apos;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&amp;/g, "&");
 }
 
-class CookieJar {
+function fromCodePointSafe(d) {
+  try {
+    return String.fromCodePoint(parseInt(d, 10));
+  } catch {
+    return "";
+  }
+}
+
+function decodeBase64Candidate(raw) {
+  try {
+    let s = String(raw || "").trim().replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) s += "=";
+    const out = Buffer.from(s, "base64").toString("utf8");
+    return out;
+  } catch {
+    return "";
+  }
+}
+
+function isStaticOrAsset(u) {
+  const p = (u.pathname || "").toLowerCase();
+  return (
+    p.includes("/beacon.min.js") ||
+    p.includes("/cdn-cgi/") ||
+    /\.(?:js|css|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot|map)(?:$|[?#])/i.test(p)
+  );
+}
+
+function isValidTargetUrl(href, sourceUrl) {
+  try {
+    const u = new URL(href);
+    if (!/^https?:$/i.test(u.protocol)) return false;
+    if (u.href === sourceUrl) return false;
+    if (SKIP_HOST_RE.test(u.hostname)) return false;
+    if (isStaticOrAsset(u)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function extractTargetFromContent(content, baseUrl, sourceUrl, trace) {
+  if (!content) return null;
+  const text = decodeEntities(String(content).replace(/\\\//g, "/"));
+
+  // 1. Cek query parameter umum seperti ?url= / ?u= / ?link= / ?target= / ?dest= / ?r=
+  try {
+    const bu = new URL(baseUrl);
+    for (const key of ["url", "u", "link", "target", "dest", "destination", "redirect", "r", "go"]) {
+      const val = bu.searchParams.get(key);
+      if (val) {
+        const candidate = /^https?:\/\//i.test(val) ? val : decodeBase64Candidate(val);
+        if (candidate && isValidTargetUrl(candidate, sourceUrl)) {
+          trace.push(`bico query ${key} -> ${candidate}`);
+          return candidate;
+        }
+      }
+    }
+  } catch {}
+
+  // 2. Pola redirect / tombol / variabel JS / meta refresh / form action
+  const directPatterns = [
+    /(?:window\.location(?:\.href)?|document\.location(?:\.href)?|top\.location(?:\.href)?|location\.replace|location\.assign|window\.open)\s*\(\s*["'`](https?:\/\/[^"'`\s<>]+)["'`]/gi,
+    /(?:var|let|const)\s+(?:url|link|target|dest|destination|redirect|final_url|go_url|next_url)\w*\s*[:=]\s*["'`](https?:\/\/[^"'`\s<>]+)["'`]/gi,
+    /["'](?:url|link|target|dest|destination|redirect|final_url)["']\s*:\s*["'`](https?:\/\/[^"'`\s<>]+)["'`]/gi,
+    /<a[^>]+(?:id|class)=["'][^"']*(?:link|get|go|continue|download|dest|target|skip|next|btn)[^"']*["'][^>]*href=["'](https?:\/\/[^"'\s<>]+)["']/gi,
+    /<a[^>]+href=["'](https?:\/\/[^"'\s<>]+)["'][^>]+(?:id|class)=["'][^"']*(?:link|get|go|continue|download|dest|target|skip|next|btn)/gi,
+    /data-(?:url|link|href|target|dest|redirect)=["'](https?:\/\/[^"'\s<>]+)["']/gi,
+    /<meta[^>]+http-equiv=["']?refresh["']?[^>]*content=["'][^"']*url=([^"'>\s;]+)/gi,
+    /<form[^>]+action=["'](https?:\/\/[^"'\s<>]+)["']/gi,
+  ];
+
+  for (const re of directPatterns) {
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const rawCand = (m[1] || "").trim().replace(/[,;'"`\])]+$/, "");
+      if (isValidTargetUrl(rawCand, sourceUrl)) {
+        trace.push(`bico pattern -> ${rawCand}`);
+        return rawCand;
+      }
+    }
+  }
+
+  // 3. Cek base64 (atob(...) atau string base64 panjang yang ter-decode menjadi http(s)://)
+  const b64Matches = [
+    ...text.matchAll(/atob\s*\(\s*["'`]([A-Za-z0-9+/=_-]{16,})["'`]\s*\)/g),
+    ...text.matchAll(/["'`](aHR0c[A-Za-z0-9+/=_-]{14,})["'`]/g),
+  ];
+  for (const bm of b64Matches) {
+    const decoded = decodeBase64Candidate(bm[1]).trim();
+    if (isValidTargetUrl(decoded, sourceUrl)) {
+      trace.push(`bico base64 -> ${decoded}`);
+      return decoded;
+    }
+  }
+
+  // 4. Scan semua URL http/https yang muncul di body
+  const allUrls = text.match(/https?:\/\/[^\s"'<>\\)\]]+/gi) || [];
+  for (const raw of allUrls) {
+    const cleaned = raw.replace(/[,;'"`\])]+$/, "");
+    if (isValidTargetUrl(cleaned, sourceUrl)) {
+      trace.push(`bico fallback url -> ${cleaned}`);
+      return cleaned;
+    }
+  }
+
+  return null;
+}
+
+class BicoSession {
   constructor() {
-    this.store = new Map();
+    this.cookies = new Map();
   }
-  set(domain, name, value) {
-    let bucket = this.store.get(domain);
-    if (!bucket) {
-      bucket = new Map();
-      this.store.set(domain, bucket);
-    }
-    bucket.set(name, value);
-  }
-  storeFromResponse(r, requestUrl) {
-    const host = new URL(requestUrl).hostname;
-    for (const raw of r.headers.getSetCookie()) {
-      const [pair, ...attrs] = raw.split(";");
+
+  storeCookies(res, url) {
+    const host = new URL(url).hostname.toLowerCase();
+    const list =
+      typeof res.headers.getSetCookie === "function"
+        ? res.headers.getSetCookie()
+        : res.headers.get("set-cookie")
+          ? [res.headers.get("set-cookie")]
+          : [];
+    for (const c of list) {
+      const [pair] = c.split(";");
       const eq = pair.indexOf("=");
-      if (eq <= 0) continue;
-      const name = pair.slice(0, eq).trim();
-      const value = pair.slice(eq + 1).trim();
-      let domain = host;
-      let expired = false;
-      for (const a of attrs) {
-        const [k, ...v] = a.split("=");
-        const key = k.trim().toLowerCase();
-        const val = v.join("=").trim();
-        if (key === "domain" && val) domain = val.replace(/^\./, "").toLowerCase();
-        if (key === "max-age" && Number(val) <= 0) expired = true;
-        if (key === "expires" && val && new Date(val).getTime() <= Date.now()) expired = true;
-      }
-      if (expired || value === "") {
-        const bucket = this.store.get(domain);
-        if (bucket) bucket.delete(name);
-      } else {
-        this.set(domain, name, value);
+      if (eq > 0) {
+        const name = pair.slice(0, eq).trim();
+        const val = pair.slice(eq + 1).trim();
+        if (/max-age=0/i.test(c) || /expires=Thu, 01 Jan 1970/i.test(c)) {
+          this.cookies.delete(`${host}:${name}`);
+        } else {
+          this.cookies.set(`${host}:${name}`, val);
+        }
       }
     }
   }
-  headerFor(url) {
-    const host = new URL(url).hostname;
+
+  cookieHeader(url) {
+    const host = new URL(url).hostname.toLowerCase();
     const out = [];
-    for (const [domain, bucket] of this.store) {
-      if (host === domain || host.endsWith("." + domain)) {
-        for (const [n, v] of bucket) out.push(`${n}=${v}`);
+    for (const [k, v] of this.cookies) {
+      const idx = k.indexOf(":");
+      const h = k.slice(0, idx);
+      const name = k.slice(idx + 1);
+      if (host === h || host.endsWith("." + h)) {
+        out.push(`${name}=${v}`);
       }
     }
     return out.join("; ");
   }
-}
 
-// Worker python dipakai saat Cloudflare nge-challenge koneksi Node.
-// Request dikirim per baris JSON lewat stdin, balasan per baris JSON lewat stdout.
-const WORKER_SRC = String.raw`
-import sys, json, urllib.request, urllib.error, uuid, gzip
-
-class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
-
-def make_opener(proxy):
-    h = [NoRedirect(), urllib.request.ProxyHandler({"http": proxy, "https": proxy} if proxy else {})]
-    return urllib.request.build_opener(*h)
-
-def handle(req, opener):
-    headers = dict(req.get("headers") or {})
-    body = None
-    b = req.get("body")
-    if b:
-        if b["type"] == "multipart":
-            boundary = uuid.uuid4().hex
-            parts = []
-            for k, v in b["fields"]:
-                parts.append(("--%s\r\nContent-Disposition: form-data; name=\"%s\"\r\n\r\n%s\r\n" % (boundary, k, v)).encode("utf-8"))
-            parts.append(("--%s--\r\n" % boundary).encode("utf-8"))
-            body = b"".join(parts)
-            headers["Content-Type"] = "multipart/form-data; boundary=" + boundary
-        else:
-            body = b["data"].encode("utf-8")
-    r = urllib.request.Request(req["url"], data=body, method=req.get("method", "GET"))
-    for k, v in headers.items():
-        r.add_header(k, v)
-    try:
-        resp = opener.open(r, timeout=req.get("timeout", 30))
-        status, rh, raw = resp.status, resp.headers, resp.read()
-    except urllib.error.HTTPError as e:
-        status, rh, raw = e.code, e.headers, e.read()
-    try:
-        if (rh.get("Content-Encoding") or "").lower() == "gzip":
-            raw = gzip.decompress(raw)
-    except Exception:
-        pass
-    return {"status": status, "headers": [[k, v] for k, v in rh.items()], "body": raw.decode("utf-8", "replace")}
-
-def main():
-    proxy = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else None
-    opener = make_opener(proxy)
-    for line in sys.stdin:
-        line = line.strip()
-        if not line:
-            continue
-        req = None
-        try:
-            req = json.loads(line)
-            res = handle(req, opener)
-            res["id"] = req.get("id")
-        except Exception as e:
-            res = {"id": (req or {}).get("id"), "error": "%s: %s" % (type(e).__name__, e)}
-        sys.stdout.write(json.dumps(res) + "\n")
-        sys.stdout.flush()
-
-main()
-`;
-
-class PythonTransport {
-  constructor(bin, proxy) {
-    this.bin = bin;
-    this.proxy = proxy || "";
-    this.proc = null;
-    this.pending = new Map();
-    this.nextId = 1;
-    this.buf = "";
-    this.stderrTail = "";
-    this.closed = false;
-  }
-  _start() {
-    this.proc = spawn(this.bin, ["-u", "-c", WORKER_SRC, this.proxy], { stdio: ["pipe", "pipe", "pipe"] });
-    this.proc.stdout.setEncoding("utf8");
-    this.proc.stdout.on("data", (chunk) => {
-      this.buf += chunk;
-      let idx;
-      while ((idx = this.buf.indexOf("\n")) >= 0) {
-        const line = this.buf.slice(0, idx).trim();
-        this.buf = this.buf.slice(idx + 1);
-        if (!line) continue;
-        let msg;
-        try {
-          msg = JSON.parse(line);
-        } catch {
-          continue;
-        }
-        const p = this.pending.get(msg.id);
-        if (!p) continue;
-        this.pending.delete(msg.id);
-        clearTimeout(p.timer);
-        if (msg.error) p.reject(new Error("python worker: " + msg.error));
-        else p.resolve(msg);
-      }
-    });
-    this.proc.stderr.setEncoding("utf8");
-    this.proc.stderr.on("data", (c) => {
-      this.stderrTail = (this.stderrTail + c).slice(-2000);
-    });
-    const failAll = (err) => {
-      for (const p of this.pending.values()) {
-        clearTimeout(p.timer);
-        p.reject(err);
-      }
-      this.pending.clear();
+  async request(url, opts = {}) {
+    const headers = {
+      "User-Agent": UA,
+      Accept:
+        opts.accept ||
+        "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
+      "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+      ...(opts.headers || {}),
     };
-    this.proc.on("error", (e) => failAll(new Error(`gagal spawn ${this.bin}: ${e.message}`)));
-    this.proc.on("exit", (code) => {
-      if (!this.closed) failAll(new Error(`python worker exit (code ${code}) ${this.stderrTail}`));
+    const ck = this.cookieHeader(url);
+    if (ck) headers.Cookie = ck;
+
+    const res = await fetch(url, {
+      method: opts.method || "GET",
+      headers,
+      body: opts.body,
+      redirect: opts.redirect || "manual",
+      signal: AbortSignal.timeout(opts.timeoutMs || 15000),
     });
-  }
-  request(req, timeoutMs) {
-    if (this.closed) return Promise.reject(new Error("python transport sudah ditutup"));
-    if (!this.proc) this._start();
-    return new Promise((resolve, reject) => {
-      const id = this.nextId++;
-      const timer = setTimeout(() => {
-        this.pending.delete(id);
-        reject(new Error("Timeout: python worker tidak merespons."));
-      }, timeoutMs + 5000);
-      this.pending.set(id, { resolve, reject, timer });
-      this.proc.stdin.write(JSON.stringify({ ...req, id, timeout: Math.ceil(timeoutMs / 1000) }) + "\n");
-    });
-  }
-  close() {
-    this.closed = true;
-    if (this.proc) {
-      try {
-        this.proc.stdin.end();
-      } catch {}
-      try {
-        this.proc.kill("SIGTERM");
-      } catch {}
-      this.proc = null;
-    }
-  }
-}
-
-let _pythonBin;
-function findPython() {
-  if (_pythonBin !== undefined) return _pythonBin;
-  for (const bin of ["python3", "python"]) {
-    try {
-      const r = spawnSync(bin, ["--version"], { timeout: 5000 });
-      if (!r.error && r.status === 0) {
-        _pythonBin = bin;
-        return bin;
-      }
-    } catch {}
-  }
-  _pythonBin = null;
-  return null;
-}
-
-function normalizeFetch(res, text) {
-  return {
-    status: res.status,
-    headers: {
-      get: (n) => res.headers.get(n),
-      getSetCookie: () =>
-        typeof res.headers.getSetCookie === "function"
-          ? res.headers.getSetCookie()
-          : res.headers.get("set-cookie")
-            ? [res.headers.get("set-cookie")]
-            : [],
-    },
-    text,
-  };
-}
-
-function normalizeWorker(msg) {
-  const hl = (msg.headers || []).map(([k, v]) => [String(k).toLowerCase(), v]);
-  return {
-    status: msg.status,
-    headers: {
-      get: (n) => {
-        const vals = hl.filter(([k]) => k === String(n).toLowerCase()).map(([, v]) => v);
-        return vals.length ? vals.join(", ") : null;
-      },
-      getSetCookie: () => hl.filter(([k]) => k === "set-cookie").map(([, v]) => v),
-    },
-    text: msg.body || "",
-  };
-}
-
-function isCfBlock(r) {
-  if (![403, 503, 429].includes(r.status)) return false;
-  return (
-    !!r.headers.get("cf-mitigated") ||
-    (r.headers.get("server") || "").toLowerCase().includes("cloudflare") ||
-    /challenge-platform|just a moment|attention required|connection check/i.test(r.text || "")
-  );
-}
-
-function toWorkerBody(body) {
-  if (!body) return null;
-  if (typeof FormData !== "undefined" && body instanceof FormData) {
-    return { type: "multipart", fields: [...body.entries()] };
-  }
-  if (body instanceof URLSearchParams) return { type: "urlencoded", data: body.toString() };
-  return { type: "urlencoded", data: String(body) };
-}
-
-// CF-block biasanya memicu balapan antara fetch dan timeout. AbortSignal.timeout
-// tidak selalu membebaskan promise fetch, jadi guard kedua memaksa reject.
-function fetchWithDeadline(url, init, timeoutMs) {
-  let killer;
-  const guard = new Promise((_, reject) => {
-    killer = setTimeout(() => {
-      reject(new Error(`guard timeout ${timeoutMs}ms`));
-      if (init && init.controller) init.controller.abort();
-    }, Math.max(1500, Math.floor(timeoutMs * 0.9)));
-  });
-  const run = fetch(url, init).finally(() => clearTimeout(killer));
-  return Promise.race([run, guard]);
-}
-
-// Health check ringan: pastikan host shortlink terjangkau sebelum proses panjang.
-async function preflight(ctx, url) {
-  const host = new URL(url).hostname;
-  let res;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 12000);
-  try {
-    res = await fetchWithDeadline(
+    this.storeCookies(res, url);
+    const text = await res.text();
+    return {
+      status: res.status,
       url,
-      { method: "GET", headers: { "User-Agent": UA, Accept: "text/html" }, redirect: "manual", signal: controller.signal, controller },
-      12000
-    );
-    const body = (await res.text()).slice(0, 4000);
-    const probe = normalizeFetch(res, body);
-    if (isCfBlock(probe)) {
-      throw new Error(
-        `Server ${host} sedang menantang request dari IP ini (HTTP ${res.status}). ` +
-          "Coba lagi beberapa menit, atau jalankan sendiri lewat server yang IP-nya tidak diblok."
-      );
-    }
-    if (res.status >= 500) throw new Error(`Server shortlink ${host} sedang error (HTTP ${res.status}).`);
-    ctx.jar.storeFromResponse(probe, url);
-    ctx.trace.push(`preflight ${host} -> ${res.status}`);
-  } catch (e) {
-    if (e.message.indexOf("menantang") >= 0 || e.message.indexOf("sedang error") >= 0) throw e;
-    throw new Error(`Server shortlink ${host} tidak merespons: ${e.message}`);
-  } finally {
-    clearTimeout(timer);
+      location: res.headers.get("location"),
+      headers: res.headers,
+      text,
+    };
   }
 }
 
-async function perform(ctx, url, method, body, headers, timeoutMs) {
-  if (ctx.transport === "python") {
-    const msg = await ctx.py.request(
-      { url, method, headers: Object.fromEntries(headers.entries()), body: toWorkerBody(body) },
-      timeoutMs
-    );
-    const r = normalizeWorker(msg);
-    if (isCfBlock(r)) {
-      throw new Error(
-        `Cloudflare tetap nge-challenge lewat python (HTTP ${r.status}, cf-ray ${r.headers.get("cf-ray") || "-"}). ` +
-          "Kemungkinan reputasi IP server jelek, coba jalankan dari jaringan lain."
-      );
-    }
-    return r;
-  }
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  let res;
-  try {
-    res = await fetchWithDeadline(
-      url,
-      { method, body, headers, redirect: "manual", signal: controller.signal, controller },
-      timeoutMs
-    );
-  } catch (e) {
-    throw new Error(`Gagal menghubungi ${new URL(url).hostname}: ${e.message}`);
-  } finally {
-    clearTimeout(timer);
-  }
-  const text = await res.text();
-  const r = normalizeFetch(res, text);
-  if (isCfBlock(r)) {
-    throw new Error(
-      `Cloudflare tetap menantang request (HTTP ${r.status}, cf-ray ${r.headers.get("cf-ray") || "-"}). ` +
-        "IP server kemungkinan dinilai rendah, coba lagi nanti."
-    );
-  }
-  return r;
-}
-
-async function request(ctx, url, opts = {}) {
-  let current = url;
-  let method = opts.method || "GET";
-  let body = opts.body;
-
-  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    const remaining = ctx.deadline - Date.now();
-    if (remaining <= 0) throw new Error("Timeout: waktu bypass habis.");
-
-    const headers = new Headers(opts.headers || {});
-    headers.set("User-Agent", UA);
-    if (!headers.has("Accept")) {
-      headers.set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-    }
-    headers.set("Accept-Language", "id-ID,id;q=0.9,en;q=0.8");
-    headers.set("sec-ch-ua", '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"');
-    headers.set("sec-ch-ua-mobile", "?0");
-    headers.set("sec-ch-ua-platform", '"Windows"');
-    if (method === "GET") {
-      headers.set("Upgrade-Insecure-Requests", "1");
-      headers.set("Sec-Fetch-Dest", "document");
-      headers.set("Sec-Fetch-Mode", "navigate");
-      headers.set("Sec-Fetch-User", "?1");
-    }
-    const cookie = ctx.jar.headerFor(current);
-    if (cookie) headers.set("Cookie", cookie);
-    if (opts.referer) headers.set("Referer", opts.referer);
-    if (method !== "GET" && method !== "HEAD") headers.set("Origin", new URL(current).origin);
-    if (!body) headers.delete("Content-Type");
-
-    const r = await perform(ctx, current, method, body, headers, Math.min(remaining, PER_REQUEST_CAP_MS));
-    ctx.jar.storeFromResponse(r, current);
-    ctx.trace.push(`${method} ${current.slice(0, 90)} -> ${r.status} [${ctx.transport}]`);
-
-    if ([301, 302, 303, 307, 308].includes(r.status)) {
-      const loc = r.headers.get("location");
-      if (!loc) return { res: r, url: current };
-      if (r.status === 303 || ((r.status === 301 || r.status === 302) && method === "POST")) {
-        method = "GET";
-        body = undefined;
-      }
-      current = new URL(loc, current).href;
-      continue;
-    }
-    return { res: r, url: current };
-  }
-  throw new Error("Terlalu banyak redirect.");
-}
-
-function harvestJsCookies(jar, html, url) {
-  const host = new URL(url).hostname;
-  const re = /document\.cookie\s*=\s*["']([^=;"']+)=([^;"']*)/g;
-  let m;
-  while ((m = re.exec(html))) jar.set(host, m[1].trim(), m[2]);
-}
-
-async function getPage(ctx, url, referer) {
-  const { res, url: finalUrl } = await request(ctx, url, { referer });
-  if (res.status >= 400) {
-    const snippet = (res.text || "").replace(/\s+/g, " ").slice(0, 160);
-    throw new Error(`HTTP ${res.status} saat GET ${finalUrl}${snippet ? " | " + snippet : ""}`);
-  }
-  harvestJsCookies(ctx.jar, res.text, finalUrl);
-  return { url: finalUrl, html: res.text };
-}
-
-function extractClientRedirect(html, baseUrl) {
-  const m =
-    html.match(/window\.location\.replace\(\s*["']([^"']+)["']\s*\)/) ||
-    html.match(/http-equiv=["']refresh["'][^>]*content=["'][^"']*?url=([^"']+)["']/i) ||
-    html.match(/window\.location(?:\.href)?\s*=\s*["']([^"']+)["']/);
-  if (!m) return null;
-  const target = decodeEntities(m[1].replace(/\\\//g, "/")).trim();
-  if (!target || target.startsWith("#")) return null;
-  try {
-    return new URL(target, baseUrl).href;
-  } catch {
-    return null;
-  }
-}
-
-function extractSafeLink(html, baseUrl) {
-  const m =
-    html.match(/id=["']wpsafe-link["'][^>]*>[\s\S]{0,500}?<a[^>]+href=["']([^"']+)["']/i) ||
-    html.match(/<a[^>]+id=["']wpsafe-link["'][^>]+href=["']([^"']+)["']/i) ||
-    html.match(/<a[^>]+href=["']([^"']+)["'][^>]+id=["']wpsafe-link["']/i);
-  if (!m) return null;
-  const href = decodeEntities(m[1]).trim();
-  if (!href || href === "#") return null;
-  try {
-    return new URL(href, baseUrl).href;
-  } catch {
-    return null;
-  }
-}
-
-function extractForm(html, id) {
-  const fm = html.match(new RegExp(`<form[^>]*\\bid=["']${id}["'][^>]*>[\\s\\S]*?</form>`, "i"));
-  if (!fm) return null;
-  const block = fm[0];
-  const openTag = (block.match(/<form[^>]*>/i) || [""])[0];
-  const actionMatch = openTag.match(/action=["']([^"']*)["']/i);
-  const fields = {};
-  for (const tag of block.match(/<input[^>]*>/gi) || []) {
-    const nameMatch = tag.match(/name=["']([^"']*)["']/i);
-    if (!nameMatch) continue;
-    const typeMatch = tag.match(/type=["']([^"']*)["']/i);
-    const type = (typeMatch ? typeMatch[1] : "text").toLowerCase();
-    if (["submit", "button", "image", "reset", "file"].includes(type)) continue;
-    if ((type === "checkbox" || type === "radio") && !/\bchecked\b/i.test(tag)) continue;
-    const valueMatch = tag.match(/value=["']([^"']*)["']/i);
-    fields[decodeEntities(nameMatch[1])] = decodeEntities(valueMatch ? valueMatch[1] : "");
-  }
-  return { action: actionMatch ? decodeEntities(actionMatch[1]) : null, fields };
-}
-
-async function bypassBicolink(url, options = {}) {
-  const startTime = Date.now();
-  const elapsed = () => Date.now() - startTime;
-  const timeoutMs = options.timeoutMs || DEFAULT_TIMEOUT_MS;
-  const proxy = options.proxy || null;
-
+async function bypassBico(inputUrl) {
+  const t0 = Date.now();
+  const trace = [];
   const result = {
     status: false,
-    author_skrep: CREDIT.author_skrep,
     source: "bicolink",
     data: null,
     error: null,
     execution_time_ms: 0,
   };
 
-  const ctx = {
-    jar: new CookieJar(),
-    deadline: Date.now() + timeoutMs,
-    proxy,
-    transport: proxy || options.forcePython ? "python" : "fetch",
-    py: null,
-    trace: [],
-  };
-
   try {
-    const cleanUrl = String(url || "").replace(/\/+$/, "");
-    assertBicolink(cleanUrl);
-    const slug = cleanUrl.split("/").pop() || "";
-    if (!slug || !/^https?:\/\//i.test(cleanUrl)) throw new Error("URL shortlink tidak valid atau slug tidak ditemukan.");
+    const normalized = /^https?:\/\//i.test(String(inputUrl || "").trim())
+      ? String(inputUrl || "").trim()
+      : "https://" + String(inputUrl || "").trim();
 
-    if (ctx.transport === "python") {
-      const bin = findPython();
-      if (!bin) {
-        if (proxy) throw new Error("python3 tidak ditemukan (dibutuhkan untuk mode proxy). Install: pkg install python");
-        ctx.transport = "fetch";
-      } else {
-        ctx.py = new PythonTransport(bin, proxy);
-      }
+    let parsed;
+    try {
+      parsed = new URL(normalized);
+    } catch {
+      throw new Error("URL Bicolink tidak valid.");
     }
 
-    await preflight(ctx, cleanUrl);
-
-    const origin = new URL(cleanUrl).origin;
-    const freeUrl = `${origin}/al/free/${slug}`;
-
-    let page = await getPage(ctx, cleanUrl);
-    page = await getPage(ctx, freeUrl, page.url);
-
-    const nonceMatch = page.html.match(/var\s+nonce\s*=\s*["']([^"']+)["']/);
-    if (nonceMatch) {
-      const fd = new FormData();
-      fd.append("nt_fb", nonceAnswer(nonceMatch[1]));
-      fd.append("nt_dari", "tantangan");
-      const { res } = await request(ctx, `${origin}/al/verify/${slug}`, { method: "POST", body: fd, referer: page.url });
-      let parsed = null;
-      try {
-        parsed = JSON.parse(res.text);
-      } catch {}
-      if (parsed && parsed.ok === false) {
-        throw new Error(`Verifikasi tantangan ditolak: ${res.text.slice(0, 120)}`);
-      }
-      page = await getPage(ctx, freeUrl, page.url);
+    const host = parsed.hostname.toLowerCase();
+    if (!BICO_HOST_RE.test(host)) {
+      throw new Error(`Host ${host} bukan domain Bicolink yang didukung.`);
     }
 
+    const session = new BicoSession();
+    let currentUrl = parsed.href;
+    let referer = "";
     let bypassedUrl = null;
-    for (let pass = 0; pass < MAX_PASSES && !bypassedUrl; pass++) {
-      if (Date.now() >= ctx.deadline) throw new Error("Timeout: waktu bypass habis.");
+    let lastHtml = "";
 
-      const goForm = extractForm(page.html, "go-link");
-      if (goForm) {
-        const action = new URL(goForm.action || page.url, page.url).href;
-        const body = new URLSearchParams(goForm.fields);
-        let attempts = 0;
-        await delay(Math.min(GO_FORM_DELAY_MS, Math.max(0, ctx.deadline - Date.now() - 8000)));
-        while (!bypassedUrl && Date.now() < ctx.deadline && attempts < 6) {
-          attempts++;
-          const { res } = await request(ctx, action, {
-            method: "POST",
-            body,
-            referer: page.url,
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-              "X-Requested-With": "XMLHttpRequest",
-              Accept: "application/json, text/javascript, */*; q=0.01",
-            },
-          });
-          let data = null;
-          try {
-            data = JSON.parse(res.text);
-          } catch {}
-          if (data && data.url) {
-            bypassedUrl = data.url;
-            break;
-          }
-          await delay(1200);
+    // Ikuti rantai redirect hingga 8 hop
+    for (let hop = 0; hop < 8; hop++) {
+      const res = await session.request(currentUrl, {
+        method: "GET",
+        referer,
+        redirect: "manual",
+      });
+      trace.push(`hop ${hop + 1} ${new URL(currentUrl).hostname} -> ${res.status}`);
+      lastHtml = res.text || "";
+
+      if ([301, 302, 303, 307, 308].includes(res.status) && res.location) {
+        const nextUrl = new URL(res.location, currentUrl).href;
+        if (isValidTargetUrl(nextUrl, parsed.href)) {
+          bypassedUrl = nextUrl;
+          break;
         }
+        referer = currentUrl;
+        currentUrl = nextUrl;
+        continue;
+      }
+
+      if (res.status >= 400) {
+        throw new Error(`${new URL(currentUrl).hostname} mengembalikan HTTP ${res.status}.`);
+      }
+
+      const found = extractTargetFromContent(lastHtml, currentUrl, parsed.href, trace);
+      if (found) {
+        bypassedUrl = found;
         break;
       }
 
-      const safeLink = extractSafeLink(page.html, page.url);
-      if (safeLink && safeLink !== page.url) {
-        page = await getPage(ctx, safeLink, page.url);
-        continue;
-      }
-
-      const clientRedirect = extractClientRedirect(page.html, page.url);
-      if (clientRedirect && clientRedirect !== page.url) {
-        page = await getPage(ctx, clientRedirect, page.url);
-        continue;
-      }
-
-      await delay(600);
-      page = await getPage(ctx, page.url, page.url);
+      break;
     }
 
-    if (!bypassedUrl) throw new Error("Gagal mengekstrak URL tujuan lewat HTTP native.");
+    // Jika belum ketemu, coba POST ke endpoint umum pada domain aktif dan domain asal
+    if (!bypassedUrl) {
+      const activeHost = (() => {
+        try {
+          return new URL(currentUrl).hostname.toLowerCase();
+        } catch {
+          return host;
+        }
+      })();
+      const slug = parsed.pathname.replace(/^\/+|\/+$/g, "").split("/").pop() || "";
+      const candidateHosts = [...new Set([activeHost, host])];
+      const candidatePaths = ["/go", "/get", "/link", "/unlock", "/redirect", "/api/link", "/api/go"];
 
-    let hostName = "";
+      for (const h of candidateHosts) {
+        for (const p of candidatePaths) {
+          if (Date.now() - t0 > 18000) break;
+          const ep = `https://${h}${p}`;
+          try {
+            const postRes = await session.request(ep, {
+              method: "POST",
+              referer: currentUrl,
+              redirect: "manual",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ slug, id: slug, code: slug, url: parsed.href }),
+            });
+            if ([301, 302, 303, 307, 308].includes(postRes.status) && postRes.location) {
+              const loc = new URL(postRes.location, ep).href;
+              if (isValidTargetUrl(loc, parsed.href)) {
+                bypassedUrl = loc;
+                trace.push(`bico post redirect ${h}${p} -> ${loc}`);
+                break;
+              }
+            }
+            const foundPost = extractTargetFromContent(postRes.text, ep, parsed.href, trace);
+            if (foundPost) {
+              bypassedUrl = foundPost;
+              break;
+            }
+          } catch {}
+        }
+        if (bypassedUrl) break;
+      }
+    }
+
+    if (!bypassedUrl) {
+      throw new Error(
+        `URL tujuan tidak ditemukan pada ${host}. Struktur halaman atau proteksi anti-bot pada domain mirror mungkin berbeda dari bicolink.com.`
+      );
+    }
+
+    let destHost = "";
     try {
-      hostName = new URL(bypassedUrl).hostname;
+      destHost = new URL(bypassedUrl).hostname;
     } catch {}
 
     result.status = true;
     result.data = {
-      source_url: cleanUrl,
+      source_url: parsed.href,
       bypassed_url: bypassedUrl,
-      host: hostName,
-      steps: ctx.trace.slice(-12),
+      host: destHost,
+      steps: trace,
     };
-  } catch (e) {
-    result.error = (e && e.message) || "Unknown error";
-    result.trace = ctx.trace.slice(-12);
-  } finally {
-    if (ctx.py) ctx.py.close();
+  } catch (err) {
+    result.error = (err && err.message) || "Gagal bypass Bicolink.";
   }
 
-  result.execution_time_ms = elapsed();
+  result.execution_time_ms = Date.now() - t0;
   return result;
 }
 
-module.exports = { bypass: bypassBicolink, CREDIT, directHandler };
-
-if (require.main === module) {
-  const target = process.argv[2] || "https://bicolink.com/wFFcZL";
-  bypassBicolink(target, { debug: true }).then((r) => {
-    console.log(JSON.stringify(r, null, 2));
-    process.exitCode = r.status ? 0 : 1;
-  });
+async function directHandler(req, res) {
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+  const rawUrl = (req && req.url) || "/";
+  const target = new URL(rawUrl, "http://localhost").searchParams.get("url") || "";
+  const out = await bypassBico(target);
+  res.statusCode = out.status ? 200 : 502;
+  res.end(JSON.stringify(out));
 }
 
+module.exports = { bypass: bypassBico, bypassBico, directHandler };
 module.exports.default = directHandler;
 module.exports.handler = directHandler;

@@ -1,7 +1,7 @@
 "use strict";
 
 const UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
 const SOCIAL_HOST_RE =
   /(^|\.)(rekonise\.com|sub2unlock\.(com|net)|ytsubme\.com|sub4unlock\.(io|com|co|net|org|me)|unlocknow\.net|sub2get\.com|subfinal\.com|mboost\.me|social-unlock\.com|socialwolvez\.com|paster\.(so|gg)|cuty\.io|adfoc\.us|mendationforc\.info)$/i;
@@ -13,10 +13,22 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function decodeEntities(s) {
   return String(s || "")
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => {
+      try {
+        return String.fromCodePoint(parseInt(h, 16));
+      } catch {
+        return "";
+      }
+    })
+    .replace(/&#(\d+);/g, (_, d) => {
+      try {
+        return String.fromCodePoint(parseInt(d, 10));
+      } catch {
+        return "";
+      }
+    })
     .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
+    .replace(/&#39;|&apos;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&amp;/g, "&");
@@ -34,27 +46,35 @@ function decodeB64(str) {
 
 function isAssetOrTrackerUrl(u) {
   const path = (u.pathname || "").toLowerCase();
-  if (
+  return (
     path.includes("/beacon.min.js") ||
     path.includes("/cdn-cgi/") ||
     /\.(?:js|css|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot|map)(?:$|[?#])/i.test(path)
-  ) {
+  );
+}
+
+function isValidExternalTarget(href, sourceUrl) {
+  try {
+    const u = new URL(href);
+    if (!/^https?:$/i.test(u.protocol)) return false;
+    if (u.href === sourceUrl) return false;
+    if (SKIP_HOST_RE.test(u.hostname)) return false;
+    if (isAssetOrTrackerUrl(u)) return false;
     return true;
+  } catch {
+    return false;
   }
-  return false;
 }
 
 function guessDestination(text, sourceUrl) {
   if (!text) return null;
-  const cleaned = String(text).replace(/\\\//g, "/");
+  const cleaned = decodeEntities(String(text).replace(/\\\//g, "/"));
   const matches = cleaned.match(/https?:\/\/[^\s"'<>\\)\]]+/gi) || [];
   for (const raw of matches) {
-    try {
-      const u = new URL(raw.replace(/[,;'"`\]]+$/, ""));
-      if (!SKIP_HOST_RE.test(u.hostname) && !isAssetOrTrackerUrl(u) && u.href !== sourceUrl) {
-        return u.href;
-      }
-    } catch {}
+    const cleanedUrl = raw.replace(/[,;'"`\])]+$/, "");
+    if (isValidExternalTarget(cleanedUrl, sourceUrl)) {
+      return cleanedUrl;
+    }
   }
   return null;
 }
@@ -64,7 +84,7 @@ class SimpleSession {
     this.cookies = new Map();
   }
   storeCookies(res, url) {
-    const host = new URL(url).hostname;
+    const host = new URL(url).hostname.toLowerCase();
     const list =
       typeof res.headers.getSetCookie === "function"
         ? res.headers.getSetCookie()
@@ -75,26 +95,34 @@ class SimpleSession {
       const [pair] = c.split(";");
       const eq = pair.indexOf("=");
       if (eq > 0) {
-        this.cookies.set(`${host}:${pair.slice(0, eq).trim()}`, pair.slice(eq + 1).trim());
+        const name = pair.slice(0, eq).trim();
+        const val = pair.slice(eq + 1).trim();
+        this.cookies.set(`${host}:${name}`, val);
       }
     }
   }
   cookieHeader(url) {
-    const host = new URL(url).hostname;
+    const host = new URL(url).hostname.toLowerCase();
     const out = [];
     for (const [k, v] of this.cookies) {
-      const [h, name] = k.split(":");
+      const idx = k.indexOf(":");
+      const h = k.slice(0, idx);
+      const name = k.slice(idx + 1);
       if (host === h || host.endsWith("." + h)) out.push(`${name}=${v}`);
     }
     return out.join("; ");
   }
   async get(url, opts = {}) {
     let cur = url;
+    let prev = opts.referer || "";
     for (let hop = 0; hop < 8; hop++) {
       const headers = {
         "User-Agent": UA,
-        Accept: opts.accept || "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
+        Accept:
+          opts.accept ||
+          "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9,id;q=0.8",
+        ...(prev ? { Referer: prev } : {}),
         ...(opts.headers || {}),
       };
       const ck = this.cookieHeader(cur);
@@ -103,13 +131,18 @@ class SimpleSession {
         method: "GET",
         headers,
         redirect: "manual",
-        signal: AbortSignal.timeout(opts.timeoutMs || 18000),
+        signal: AbortSignal.timeout(opts.timeoutMs || 15000),
       });
       this.storeCookies(res, cur);
       if ([301, 302, 303, 307, 308].includes(res.status)) {
         const loc = res.headers.get("location");
         if (!loc) break;
-        cur = new URL(loc, cur).href;
+        const nextHref = new URL(loc, cur).href;
+        if (isValidExternalTarget(nextHref, url)) {
+          return { status: res.status, url: nextHref, headers: res.headers, text: nextHref };
+        }
+        prev = cur;
+        cur = nextHref;
         continue;
       }
       const text = await res.text();
@@ -130,7 +163,7 @@ class SimpleSession {
       method: "POST",
       headers,
       body: JSON.stringify(payload || {}),
-      signal: AbortSignal.timeout(opts.timeoutMs || 12000),
+      signal: AbortSignal.timeout(opts.timeoutMs || 10000),
     });
     this.storeCookies(res, url);
     const text = await res.text();
@@ -151,12 +184,12 @@ async function bypassRekonise(parsedUrl, trace) {
   } catch {
     throw new Error("Respon api.rekonise.com bukan JSON.");
   }
-  if (data && data.url) return data.url;
+  if (data && data.url && isValidExternalTarget(data.url, parsedUrl.href)) return data.url;
   const ut = data && data.unlock_token;
   if (ut) {
-    const deadline = Date.now() + 35000;
+    const deadline = Date.now() + 20000;
     while (Date.now() < deadline) {
-      await delay(5000);
+      await delay(4000);
       const uRes = await s.get(
         `https://api.rekonise.com/social-unlocks${path}/unlock?token=${encodeURIComponent(ut)}`,
         { accept: "application/json, text/plain, */*" }
@@ -165,7 +198,7 @@ async function bypassRekonise(parsedUrl, trace) {
       if (uRes.status === 200) {
         try {
           const d2 = JSON.parse(uRes.text);
-          if (d2 && d2.url) return d2.url;
+          if (d2 && d2.url && isValidExternalTarget(d2.url, parsedUrl.href)) return d2.url;
         } catch {}
       }
     }
@@ -178,12 +211,14 @@ async function bypassRekonise(parsedUrl, trace) {
 async function bypassSub2UnlockCom(parsedUrl, trace) {
   const vid = parsedUrl.pathname.replace(/^\/+|\/+$/g, "").split("/").pop() || "";
   const s = new SimpleSession();
-  const r = await s.get(`https://sub2unlock.com/link/unlock/${encodeURIComponent(vid)}`);
+  const r = await s.get(`https://sub2unlock.com/link/unlock/${encodeURIComponent(vid)}`, {
+    referer: parsedUrl.href,
+  });
   trace.push(`sub2unlock.com unlock -> ${r.status}`);
   const m =
     r.text.match(/<a[^>]+id=["']link["'][^>]+href=["']([^"']+)["']/i) ||
     r.text.match(/href=["'](https?:\/\/[^"']+)["'][^>]*id=["']link["']/i);
-  if (m && m[1].startsWith("http")) return m[1];
+  if (m && isValidExternalTarget(m[1], parsedUrl.href)) return m[1];
   const dest = guessDestination(r.text, parsedUrl.href);
   if (dest) return dest;
   throw new Error("sub2unlock.com: URL tujuan tidak ditemukan.");
@@ -201,7 +236,8 @@ async function bypassSub2UnlockNet(parsedUrl, trace) {
   ];
   for (const pat of pats) {
     const m = r.text.match(pat);
-    if (m && String(m[1]).trim().startsWith("http")) return String(m[1]).trim();
+    const cand = m && String(m[1]).trim();
+    if (cand && isValidExternalTarget(cand, parsedUrl.href)) return cand;
   }
   const dest = guessDestination(r.text, parsedUrl.href);
   if (dest) return dest;
@@ -215,7 +251,7 @@ async function bypassYtSubMe(parsedUrl, trace) {
   const m =
     r.text.match(/<a[^>]+id=["']link["'][^>]+href=["']([^"']+)["']/i) ||
     r.text.match(/href=["'](https?:\/\/[^"']+)["'][^>]*id=["']link["']/i);
-  if (m && m[1].startsWith("http")) return m[1];
+  if (m && isValidExternalTarget(m[1], parsedUrl.href)) return m[1];
   const dest = guessDestination(r.text, parsedUrl.href);
   if (dest) return dest;
   throw new Error("ytsubme: URL tujuan tidak ditemukan.");
@@ -225,19 +261,12 @@ async function bypassSub4Unlock(parsedUrl, trace) {
   const s = new SimpleSession();
   const r = await s.get(parsedUrl.href);
   trace.push(`sub4unlock get -> ${r.status}`);
-  const html = r.text || "";
+  const html = decodeEntities(r.text || "");
 
-  // Jika langsung redirect ke URL eksternal non-tracker
-  if (r.url && r.url !== parsedUrl.href) {
-    try {
-      const ru = new URL(r.url);
-      if (!SKIP_HOST_RE.test(ru.hostname) && !isAssetOrTrackerUrl(ru)) {
-        return ru.href;
-      }
-    } catch {}
+  if (isValidExternalTarget(r.url, parsedUrl.href)) {
+    return r.url;
   }
 
-  // Pola eksplisit URL tujuan di script / tombol / redirect / base64
   const pats = [
     /(?:window\.location(?:\.href)?|window\.open|location\.replace)\s*\(\s*["'`](https?:\/\/[^"'`]+)["'`]/i,
     /(?:var|let|const)\s+(?:link|url|target|dest|destination|redirect|unlock_url|final_url)\w*\s*=\s*["'`](https?:\/\/[^"'`]+)["'`]/i,
@@ -247,33 +276,27 @@ async function bypassSub4Unlock(parsedUrl, trace) {
   ];
   for (const pat of pats) {
     const m = html.match(pat);
-    if (m && m[1]) {
-      try {
-        const u = new URL(decodeEntities(m[1]).trim());
-        if (!SKIP_HOST_RE.test(u.hostname) && !isAssetOrTrackerUrl(u) && u.href !== parsedUrl.href) {
-          return u.href;
-        }
-      } catch {}
+    if (m && m[1] && isValidExternalTarget(m[1].trim(), parsedUrl.href)) {
+      return m[1].trim();
     }
   }
 
-  // Cek base64 (atob / b64 string panjang)
   for (const m of html.matchAll(/atob\s*\(\s*["']([A-Za-z0-9+/=_-]{16,})["']\s*\)/g)) {
     const dec = decodeB64(m[1]).trim();
-    if (/^https?:\/\//i.test(dec)) {
-      try {
-        const u = new URL(dec);
-        if (!SKIP_HOST_RE.test(u.hostname) && !isAssetOrTrackerUrl(u)) return u.href;
-      } catch {}
+    if (isValidExternalTarget(dec, parsedUrl.href)) {
+      return dec;
     }
   }
 
-  // Cek endpoint unlock umum jika ada slug/id
   const slug = parsedUrl.pathname.replace(/^\/+|\/+$/g, "").split("/").pop() || "";
   if (slug) {
     for (const ep of ["/unlock", "/api/unlock", "/get-link", "/go"]) {
       try {
-        const resPost = await s.postJson(`https://${parsedUrl.hostname}${ep}`, { slug, id: slug, code: slug });
+        const resPost = await s.postJson(
+          `https://${parsedUrl.hostname}${ep}`,
+          { slug, id: slug, code: slug, url: parsedUrl.href },
+          { headers: { Referer: parsedUrl.href } }
+        );
         const fromJson = guessDestination(resPost.text, parsedUrl.href);
         if (fromJson) return fromJson;
       } catch {}
@@ -282,15 +305,21 @@ async function bypassSub4Unlock(parsedUrl, trace) {
 
   const dest = guessDestination(html, parsedUrl.href);
   if (dest) return dest;
-  throw new Error("sub4unlock: halaman membutuhkan interaksi/captcha di browser atau URL tujuan tidak ter-embed di HTML awal.");
+  throw new Error(
+    "sub4unlock: halaman membutuhkan interaksi/captcha di browser atau URL tujuan tidak ter-embed di HTML awal."
+  );
 }
 
 async function bypassGenericSocial(parsedUrl, trace) {
   const host = parsedUrl.hostname.toLowerCase();
   const s = new SimpleSession();
-  const r = await s.get(parsedUrl.href, { timeoutMs: 20000 });
+  const r = await s.get(parsedUrl.href, { timeoutMs: 16000 });
   trace.push(`generic ${host} -> ${r.status}`);
-  const html = r.text || "";
+  const html = decodeEntities(r.text || "");
+
+  if (isValidExternalTarget(r.url, parsedUrl.href)) {
+    return r.url;
+  }
 
   const patterns = [
     /window\.location\.href\s*=\s*["'](https?:\/\/[^"']+)/i,
@@ -306,28 +335,31 @@ async function bypassGenericSocial(parsedUrl, trace) {
 
   for (const pat of patterns) {
     const m = html.match(pat);
-    if (m && m[1] && m[1].startsWith("http")) return m[1];
+    if (m && m[1] && isValidExternalTarget(m[1].trim(), parsedUrl.href)) return m[1].trim();
   }
 
   for (const m of html.matchAll(/atob\(["']([A-Za-z0-9+/=_-]{20,})["']\)/g)) {
-    const dec = decodeB64(m[1]);
-    if (dec.startsWith("http")) return dec;
+    const dec = decodeB64(m[1]).trim();
+    if (isValidExternalTarget(dec, parsedUrl.href)) return dec;
   }
 
+  const slug = parsedUrl.pathname.replace(/^\/+|\/+$/g, "");
   for (const ep of ["/api/link", "/api/unlock", "/api/get", "/unlock", "/get-link"]) {
     try {
-      const r2 = await s.postJson(`https://${host}${ep}`, { id: parsedUrl.pathname.replace(/^\/+|\/+$/g, "") });
+      const r2 = await s.postJson(
+        `https://${host}${ep}`,
+        { id: slug, slug, url: parsedUrl.href },
+        { headers: { Referer: parsedUrl.href } }
+      );
       if ((r2.headers.get("content-type") || "").toLowerCase().includes("application/json")) {
         const d = JSON.parse(r2.text);
         for (const k of ["url", "destination", "link", "target"]) {
-          if (d && typeof d[k] === "string" && d[k].startsWith("http")) return d[k];
+          if (d && typeof d[k] === "string" && isValidExternalTarget(d[k], parsedUrl.href)) return d[k];
         }
       }
+      const guessedPost = guessDestination(r2.text, parsedUrl.href);
+      if (guessedPost) return guessedPost;
     } catch {}
-  }
-
-  if (r.url !== parsedUrl.href && !r.url.replace(/\/+$/, "").endsWith(host)) {
-    return r.url;
   }
 
   const dest = guessDestination(html, parsedUrl.href);
@@ -372,7 +404,7 @@ async function bypassSocial(inputUrl) {
       bypassedUrl = await bypassSub2UnlockNet(parsed, trace);
     } else if (host === "ytsubme.com" || host.endsWith(".ytsubme.com")) {
       bypassedUrl = await bypassYtSubMe(parsed, trace);
-    } else if (/\.(sub4unlock\.(io|com|co|net|org|me))$/.test("." + host)) {
+    } else if (/(^|\.)sub4unlock\.(io|com|co|net|org|me)$/i.test(host)) {
       bypassedUrl = await bypassSub4Unlock(parsed, trace);
     } else {
       bypassedUrl = await bypassGenericSocial(parsed, trace);
