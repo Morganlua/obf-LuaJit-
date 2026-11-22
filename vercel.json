@@ -2,12 +2,12 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/api/react",
-      "destination": "/api/react.ts"
+      "source": "/api/bypass",
+      "destination": "/api/index.js"
     },
     {
-      "source": "/api/docs",
-      "destination": "/api/docs.ts"
+      "source": "/api/index",
+      "destination": "/api/index.js"
     },
     {
       "source": "/(.*)",

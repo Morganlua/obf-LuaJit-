@@ -1,7 +1,8 @@
-# Noxis React Ch (GitHub + Vercel)
+# Noxis — Bypass Link (Vercel)
 
-Struktur proyek siap deploy ke GitHub dan Vercel:
-- `api/react.ts` — Serverless function handler (`POST /api/react`) dengan validasi input, batasan maksimal 5 emoji, cookie session capture, serta perbaikan deteksi endpoint dan status respons.
-- `api/docs.ts` — Endpoint dokumentasi ringan (`GET /api/docs`).
-- `public/index.html` — Antarmuka web dengan penanganan respons non-JSON/error HTTP yang aman serta tombol akses saluran.
-- `vercel.json` — Konfigurasi rewrite untuk `/api/react`, `/api/docs`, dan SPA fallback ke `/public/index.html`.
+Struktur proyek siap deploy ke Vercel:
+- `api/index.js` — Router utama bypass link (`mgvt`, `umpc`, `lv`, `social`).
+- `api/umpc.js` — Perbaikan handler Bicolink (`bicolink.com` & domain mirror/terkait) dengan pelacakan redirect, ekstraksi URL/base64/query, dan fallback endpoint.
+- `api/social.js` — Perbaikan handler Social Unlock dengan normalisasi cookie per host, validasi URL target eksternal, dan pembersihan entity HTML.
+- `api/mgvt.js` & `api/lv.js` — Engine SafelinkU dan Linkvertise.
+- `public/index.html` — Antarmuka gelap monokrom bergaya panel neo-brutalist/terminal sesuai referensi.

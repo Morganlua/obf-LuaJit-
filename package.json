@@ -1,19 +1,8 @@
 {
-  "name": "noxis-react-ch",
-  "version": "2.0.0",
-  "description": "Noxis React Ch WhatsApp Channel Auto Reaction for Vercel",
-  "main": "api/react.ts",
-  "scripts": {
-    "build": "tsc --noEmit || true"
-  },
-  "dependencies": {
-    "axios": "^1.6.0",
-    "cheerio": "^1.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "typescript": "^5.3.0"
-  },
+  "name": "noxis-bypass-link",
+  "version": "1.0.0",
+  "description": "Noxis Bypass Link Vercel Serverless App",
+  "main": "api/index.js",
   "engines": {
     "node": ">=18.0.0"
   }
